@@ -1,0 +1,17 @@
+llm:
+  default_provider: openai  # openai | claude | google
+
+  openai:
+    model: gpt-4o
+    temperature: 0.7
+    max_tokens: 4096
+
+  claude:
+    model: claude-3-5-sonnet-20241022
+    temperature: 0.7
+    max_tokens: 4096
+
+  google:
+    model: gemini-2.5-flash
+    temperature: 0.7
+    max_tokens: 4096

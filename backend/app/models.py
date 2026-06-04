@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime, timezone
+from typing import List, Optional
 
 from pydantic import EmailStr
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, Numeric, String
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -10,7 +11,10 @@ def get_datetime_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# Shared properties
+# ---------------------------------------------------------------------------
+# User models
+# ---------------------------------------------------------------------------
+
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
     is_active: bool = True
@@ -18,7 +22,6 @@ class UserBase(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
 
 
-# Properties to receive via API on creation
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=128)
 
@@ -29,7 +32,6 @@ class UserRegister(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
 
 
-# Properties to receive via API on update, all are optional
 class UserUpdate(UserBase):
     email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore[assignment]
     password: str | None = Field(default=None, min_length=8, max_length=128)
@@ -45,7 +47,6 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
-# Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
@@ -54,9 +55,9 @@ class User(UserBase, table=True):
         sa_type=DateTime(timezone=True),  # type: ignore
     )
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    projects: list["Project"] = Relationship(back_populates="user", cascade_delete=True)
 
 
-# Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
     created_at: datetime | None = None
@@ -67,23 +68,23 @@ class UsersPublic(SQLModel):
     count: int
 
 
-# Shared properties
+# ---------------------------------------------------------------------------
+# Item models
+# ---------------------------------------------------------------------------
+
 class ItemBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=255)
 
 
-# Properties to receive on item creation
 class ItemCreate(ItemBase):
     pass
 
 
-# Properties to receive on item update
 class ItemUpdate(ItemBase):
     title: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore[assignment]
 
 
-# Database model, database table inferred from class name
 class Item(ItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(
@@ -96,7 +97,6 @@ class Item(ItemBase, table=True):
     owner: User | None = Relationship(back_populates="items")
 
 
-# Properties to return via API, id is always required
 class ItemPublic(ItemBase):
     id: uuid.UUID
     owner_id: uuid.UUID
@@ -108,18 +108,19 @@ class ItemsPublic(SQLModel):
     count: int
 
 
-# Generic message
+# ---------------------------------------------------------------------------
+# Auth / token models
+# ---------------------------------------------------------------------------
+
 class Message(SQLModel):
     message: str
 
 
-# JSON payload containing access token
 class Token(SQLModel):
     access_token: str
     token_type: str = "bearer"
 
 
-# Contents of JWT token
 class TokenPayload(SQLModel):
     sub: str | None = None
 
@@ -127,3 +128,115 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+# ---------------------------------------------------------------------------
+# Project models
+# ---------------------------------------------------------------------------
+
+class Project(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Foreign Keys
+    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, ondelete="CASCADE")
+
+    title: str | None = Field(default=None, max_length=255)
+    type: str | None = Field(default=None, max_length=255)
+    status: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None, max_length=255)
+    total_cost: float = Field(default=0.0)
+    updated_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+
+    # Relationships
+    user: User | None = Relationship(back_populates="projects")
+    storyboard: Optional["StoryBoard"] = Relationship(
+        back_populates="project",
+        sa_relationship_kwargs={"uselist": False, "cascade": "all, delete-orphan"},
+    )
+    media_list: List["MediaData"] = Relationship(
+        back_populates="project",
+        cascade_delete=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# MediaData model
+# ---------------------------------------------------------------------------
+
+class MediaData(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Foreign Keys
+    project_id: uuid.UUID = Field(foreign_key="project.id", nullable=False, ondelete="CASCADE")
+
+    type: str = Field(default="", max_length=255)
+    url: str | None = Field(default=None, max_length=2048)
+    content: str | None = Field(default=None)
+    updated_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+
+    # Relationships
+    project: Project | None = Relationship(back_populates="media_list")
+
+
+# ---------------------------------------------------------------------------
+# StoryBoard model
+# ---------------------------------------------------------------------------
+
+class StoryBoard(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Foreign Keys — unique=True enforces the one-to-one with Project
+    project_id: uuid.UUID = Field(
+        foreign_key="project.id", nullable=False, unique=True, ondelete="CASCADE"
+    )
+
+    content: str | None = Field(default=None)
+    scenes: str | None = Field(default=None)
+    style: str | None = Field(default=None, max_length=255)
+
+    # Relationships
+    project: Project | None = Relationship(back_populates="storyboard")
+    characters: List["Character"] = Relationship(
+        back_populates="storyboard",
+        cascade_delete=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Character model
+# ---------------------------------------------------------------------------
+
+class Character(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Foreign Keys
+    storyboard_id: uuid.UUID = Field(
+        foreign_key="storyboard.id", nullable=False, ondelete="CASCADE"
+    )
+
+    name: str | None = Field(default=None, max_length=255)
+    gender: str | None = Field(default=None, max_length=50)
+    age: int | None = Field(default=None)
+    body_build: str | None = Field(default=None, max_length=255)
+    face: str | None = Field(default=None, max_length=255)
+    hair: str | None = Field(default=None, max_length=255)
+    clothes: str | None = Field(default=None, max_length=255)
+    nationality: str | None = Field(default=None, max_length=255)
+    source: str | None = Field(default=None, max_length=2048)
+
+    # Relationships
+    storyboard: StoryBoard | None = Relationship(back_populates="characters")
