@@ -3,7 +3,190 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CreateStoryboardApiV1StoryboardsPostData, CreateStoryboardApiV1StoryboardsPostResponse, GetStoryboardApiV1StoryboardsStoryboardIdGetData, GetStoryboardApiV1StoryboardsStoryboardIdGetResponse, GetStoryboardCharactersApiV1StoryboardsStoryboardIdCharactersGetData, GetStoryboardCharactersApiV1StoryboardsStoryboardIdCharactersGetResponse, GetStoryboardSettingsApiV1StoryboardsStoryboardIdSettingsGetData, GetStoryboardSettingsApiV1StoryboardsStoryboardIdSettingsGetResponse, GetStoryboardScenesApiV1StoryboardsStoryboardIdScenesGetData, GetStoryboardScenesApiV1StoryboardsStoryboardIdScenesGetResponse, AnalyzeStoryApiV1StoryboardsStoryboardIdAnalyzePostData, AnalyzeStoryApiV1StoryboardsStoryboardIdAnalyzePostResponse, ReadItemsApiV1ItemsGetData, ReadItemsApiV1ItemsGetResponse, CreateItemApiV1ItemsPostData, CreateItemApiV1ItemsPostResponse, ReadItemApiV1ItemsIdGetData, ReadItemApiV1ItemsIdGetResponse, UpdateItemApiV1ItemsIdPutData, UpdateItemApiV1ItemsIdPutResponse, DeleteItemApiV1ItemsIdDeleteData, DeleteItemApiV1ItemsIdDeleteResponse, LoginAccessTokenApiV1LoginAccessTokenPostData, LoginAccessTokenApiV1LoginAccessTokenPostResponse, TestTokenApiV1LoginTestTokenPostResponse, RecoverPasswordApiV1PasswordRecoveryEmailPostData, RecoverPasswordApiV1PasswordRecoveryEmailPostResponse, ResetPasswordApiV1ResetPasswordPostData, ResetPasswordApiV1ResetPasswordPostResponse, RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostData, RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostResponse, CreateUserApiV1PrivateUsersPostData, CreateUserApiV1PrivateUsersPostResponse, ReadUsersApiV1UsersGetData, ReadUsersApiV1UsersGetResponse, CreateUserApiV1UsersPostData, CreateUserApiV1UsersPostResponse, ReadUserMeApiV1UsersMeGetResponse, DeleteUserMeApiV1UsersMeDeleteResponse, UpdateUserMeApiV1UsersMePatchData, UpdateUserMeApiV1UsersMePatchResponse, UpdatePasswordMeApiV1UsersMePasswordPatchData, UpdatePasswordMeApiV1UsersMePasswordPatchResponse, RegisterUserApiV1UsersSignupPostData, RegisterUserApiV1UsersSignupPostResponse, ReadUserByIdApiV1UsersUserIdGetData, ReadUserByIdApiV1UsersUserIdGetResponse, UpdateUserApiV1UsersUserIdPatchData, UpdateUserApiV1UsersUserIdPatchResponse, DeleteUserApiV1UsersUserIdDeleteData, DeleteUserApiV1UsersUserIdDeleteResponse, TestEmailApiV1UtilsTestEmailPostData, TestEmailApiV1UtilsTestEmailPostResponse, HealthCheckApiV1UtilsHealthCheckGetResponse } from './types.gen';
+
+export class DefaultService {
+    /**
+     * Create Storyboard
+     * Create a new storyboard for a project.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_in: Storyboard creation data
+     *
+     * Returns:
+     * Created storyboard
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns StoryBoard Successful Response
+     * @throws ApiError
+     */
+    public static createStoryboardApiV1StoryboardsPost(data: CreateStoryboardApiV1StoryboardsPostData): CancelablePromise<CreateStoryboardApiV1StoryboardsPostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/storyboards',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Storyboard
+     * Get a storyboard by ID.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     *
+     * Returns:
+     * Storyboard with related data
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @returns StoryBoard Successful Response
+     * @throws ApiError
+     */
+    public static getStoryboardApiV1StoryboardsStoryboardIdGet(data: GetStoryboardApiV1StoryboardsStoryboardIdGetData): CancelablePromise<GetStoryboardApiV1StoryboardsStoryboardIdGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/storyboards/{storyboard_id}',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Storyboard Characters
+     * Get all characters for a storyboard.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     *
+     * Returns:
+     * List of characters
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @returns Character Successful Response
+     * @throws ApiError
+     */
+    public static getStoryboardCharactersApiV1StoryboardsStoryboardIdCharactersGet(data: GetStoryboardCharactersApiV1StoryboardsStoryboardIdCharactersGetData): CancelablePromise<GetStoryboardCharactersApiV1StoryboardsStoryboardIdCharactersGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/storyboards/{storyboard_id}/characters',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Storyboard Settings
+     * Get all settings for a storyboard.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     *
+     * Returns:
+     * List of settings
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @returns Setting Successful Response
+     * @throws ApiError
+     */
+    public static getStoryboardSettingsApiV1StoryboardsStoryboardIdSettingsGet(data: GetStoryboardSettingsApiV1StoryboardsStoryboardIdSettingsGetData): CancelablePromise<GetStoryboardSettingsApiV1StoryboardsStoryboardIdSettingsGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/storyboards/{storyboard_id}/settings',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Storyboard Scenes
+     * Get all scenes for a storyboard.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     *
+     * Returns:
+     * List of scenes ordered by sequence number
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @returns Scene Successful Response
+     * @throws ApiError
+     */
+    public static getStoryboardScenesApiV1StoryboardsStoryboardIdScenesGet(data: GetStoryboardScenesApiV1StoryboardsStoryboardIdScenesGetData): CancelablePromise<GetStoryboardScenesApiV1StoryboardsStoryboardIdScenesGetResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/storyboards/{storyboard_id}/scenes',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Analyze Story
+     * Analyze story content and extract characters, settings, and scenes.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     * style: Art style for image generation
+     * generate_images: Whether to generate reference images
+     *
+     * Returns:
+     * Analysis results with counts
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @param data.style
+     * @param data.generateImages
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static analyzeStoryApiV1StoryboardsStoryboardIdAnalyzePost(data: AnalyzeStoryApiV1StoryboardsStoryboardIdAnalyzePostData): CancelablePromise<AnalyzeStoryApiV1StoryboardsStoryboardIdAnalyzePostResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/storyboards/{storyboard_id}/analyze',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            query: {
+                style: data.style,
+                generate_images: data.generateImages
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class ItemsService {
     /**
@@ -15,7 +198,7 @@ export class ItemsService {
      * @returns ItemsPublic Successful Response
      * @throws ApiError
      */
-    public static readItems(data: ItemsReadItemsData = {}): CancelablePromise<ItemsReadItemsResponse> {
+    public static readItemsApiV1ItemsGet(data: ReadItemsApiV1ItemsGetData = {}): CancelablePromise<ReadItemsApiV1ItemsGetResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/items/',
@@ -37,7 +220,7 @@ export class ItemsService {
      * @returns ItemPublic Successful Response
      * @throws ApiError
      */
-    public static createItem(data: ItemsCreateItemData): CancelablePromise<ItemsCreateItemResponse> {
+    public static createItemApiV1ItemsPost(data: CreateItemApiV1ItemsPostData): CancelablePromise<CreateItemApiV1ItemsPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/items/',
@@ -57,7 +240,7 @@ export class ItemsService {
      * @returns ItemPublic Successful Response
      * @throws ApiError
      */
-    public static readItem(data: ItemsReadItemData): CancelablePromise<ItemsReadItemResponse> {
+    public static readItemApiV1ItemsIdGet(data: ReadItemApiV1ItemsIdGetData): CancelablePromise<ReadItemApiV1ItemsIdGetResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/items/{id}',
@@ -79,7 +262,7 @@ export class ItemsService {
      * @returns ItemPublic Successful Response
      * @throws ApiError
      */
-    public static updateItem(data: ItemsUpdateItemData): CancelablePromise<ItemsUpdateItemResponse> {
+    public static updateItemApiV1ItemsIdPut(data: UpdateItemApiV1ItemsIdPutData): CancelablePromise<UpdateItemApiV1ItemsIdPutResponse> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/api/v1/items/{id}',
@@ -102,7 +285,7 @@ export class ItemsService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static deleteItem(data: ItemsDeleteItemData): CancelablePromise<ItemsDeleteItemResponse> {
+    public static deleteItemApiV1ItemsIdDelete(data: DeleteItemApiV1ItemsIdDeleteData): CancelablePromise<DeleteItemApiV1ItemsIdDeleteResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/items/{id}',
@@ -125,7 +308,7 @@ export class LoginService {
      * @returns Token Successful Response
      * @throws ApiError
      */
-    public static loginAccessToken(data: LoginLoginAccessTokenData): CancelablePromise<LoginLoginAccessTokenResponse> {
+    public static accessTokenApiV1LoginAccessTokenPost(data: LoginAccessTokenApiV1LoginAccessTokenPostData): CancelablePromise<LoginAccessTokenApiV1LoginAccessTokenPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/login/access-token',
@@ -143,7 +326,7 @@ export class LoginService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static testToken(): CancelablePromise<LoginTestTokenResponse> {
+    public static testTokenApiV1LoginTestTokenPost(): CancelablePromise<TestTokenApiV1LoginTestTokenPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/login/test-token'
@@ -158,7 +341,7 @@ export class LoginService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static recoverPassword(data: LoginRecoverPasswordData): CancelablePromise<LoginRecoverPasswordResponse> {
+    public static recoverPasswordApiV1PasswordRecoveryEmailPost(data: RecoverPasswordApiV1PasswordRecoveryEmailPostData): CancelablePromise<RecoverPasswordApiV1PasswordRecoveryEmailPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/password-recovery/{email}',
@@ -179,7 +362,7 @@ export class LoginService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static resetPassword(data: LoginResetPasswordData): CancelablePromise<LoginResetPasswordResponse> {
+    public static resetPasswordApiV1ResetPasswordPost(data: ResetPasswordApiV1ResetPasswordPostData): CancelablePromise<ResetPasswordApiV1ResetPasswordPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/reset-password/',
@@ -199,7 +382,7 @@ export class LoginService {
      * @returns string Successful Response
      * @throws ApiError
      */
-    public static recoverPasswordHtmlContent(data: LoginRecoverPasswordHtmlContentData): CancelablePromise<LoginRecoverPasswordHtmlContentResponse> {
+    public static recoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPost(data: RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostData): CancelablePromise<RecoverPasswordHtmlContentApiV1PasswordRecoveryHtmlContentEmailPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/password-recovery-html-content/{email}',
@@ -222,7 +405,7 @@ export class PrivateService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static createUser(data: PrivateCreateUserData): CancelablePromise<PrivateCreateUserResponse> {
+    public static createUserApiV1PrivateUsersPost(data: CreateUserApiV1PrivateUsersPostData): CancelablePromise<CreateUserApiV1PrivateUsersPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/private/users/',
@@ -245,7 +428,7 @@ export class UsersService {
      * @returns UsersPublic Successful Response
      * @throws ApiError
      */
-    public static readUsers(data: UsersReadUsersData = {}): CancelablePromise<UsersReadUsersResponse> {
+    public static readUsersApiV1UsersGet(data: ReadUsersApiV1UsersGetData = {}): CancelablePromise<ReadUsersApiV1UsersGetResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/users/',
@@ -267,7 +450,7 @@ export class UsersService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static createUser(data: UsersCreateUserData): CancelablePromise<UsersCreateUserResponse> {
+    public static createUserApiV1UsersPost(data: CreateUserApiV1UsersPostData): CancelablePromise<CreateUserApiV1UsersPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/users/',
@@ -285,7 +468,7 @@ export class UsersService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static readUserMe(): CancelablePromise<UsersReadUserMeResponse> {
+    public static readUserMeApiV1UsersMeGet(): CancelablePromise<ReadUserMeApiV1UsersMeGetResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/users/me'
@@ -298,7 +481,7 @@ export class UsersService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static deleteUserMe(): CancelablePromise<UsersDeleteUserMeResponse> {
+    public static deleteUserMeApiV1UsersMeDelete(): CancelablePromise<DeleteUserMeApiV1UsersMeDeleteResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/users/me'
@@ -313,7 +496,7 @@ export class UsersService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static updateUserMe(data: UsersUpdateUserMeData): CancelablePromise<UsersUpdateUserMeResponse> {
+    public static updateUserMeApiV1UsersMePatch(data: UpdateUserMeApiV1UsersMePatchData): CancelablePromise<UpdateUserMeApiV1UsersMePatchResponse> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/users/me',
@@ -333,7 +516,7 @@ export class UsersService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static updatePasswordMe(data: UsersUpdatePasswordMeData): CancelablePromise<UsersUpdatePasswordMeResponse> {
+    public static updatePasswordMeApiV1UsersMePasswordPatch(data: UpdatePasswordMeApiV1UsersMePasswordPatchData): CancelablePromise<UpdatePasswordMeApiV1UsersMePasswordPatchResponse> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/users/me/password',
@@ -353,7 +536,7 @@ export class UsersService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static registerUser(data: UsersRegisterUserData): CancelablePromise<UsersRegisterUserResponse> {
+    public static registerUserApiV1UsersSignupPost(data: RegisterUserApiV1UsersSignupPostData): CancelablePromise<RegisterUserApiV1UsersSignupPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/users/signup',
@@ -373,7 +556,7 @@ export class UsersService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static readUserById(data: UsersReadUserByIdData): CancelablePromise<UsersReadUserByIdResponse> {
+    public static readUserByIdApiV1UsersUserIdGet(data: ReadUserByIdApiV1UsersUserIdGetData): CancelablePromise<ReadUserByIdApiV1UsersUserIdGetResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/users/{user_id}',
@@ -395,7 +578,7 @@ export class UsersService {
      * @returns UserPublic Successful Response
      * @throws ApiError
      */
-    public static updateUser(data: UsersUpdateUserData): CancelablePromise<UsersUpdateUserResponse> {
+    public static updateUserApiV1UsersUserIdPatch(data: UpdateUserApiV1UsersUserIdPatchData): CancelablePromise<UpdateUserApiV1UsersUserIdPatchResponse> {
         return __request(OpenAPI, {
             method: 'PATCH',
             url: '/api/v1/users/{user_id}',
@@ -418,7 +601,7 @@ export class UsersService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static deleteUser(data: UsersDeleteUserData): CancelablePromise<UsersDeleteUserResponse> {
+    public static deleteUserApiV1UsersUserIdDelete(data: DeleteUserApiV1UsersUserIdDeleteData): CancelablePromise<DeleteUserApiV1UsersUserIdDeleteResponse> {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/users/{user_id}',
@@ -441,7 +624,7 @@ export class UtilsService {
      * @returns Message Successful Response
      * @throws ApiError
      */
-    public static testEmail(data: UtilsTestEmailData): CancelablePromise<UtilsTestEmailResponse> {
+    public static testEmailApiV1UtilsTestEmailPost(data: TestEmailApiV1UtilsTestEmailPostData): CancelablePromise<TestEmailApiV1UtilsTestEmailPostResponse> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/utils/test-email/',
@@ -459,7 +642,7 @@ export class UtilsService {
      * @returns boolean Successful Response
      * @throws ApiError
      */
-    public static healthCheck(): CancelablePromise<UtilsHealthCheckResponse> {
+    public static healthCheckApiV1UtilsHealthCheckGet(): CancelablePromise<HealthCheckApiV1UtilsHealthCheckGetResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/utils/health-check/'
