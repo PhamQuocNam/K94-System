@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-_CONFIG_PATH = Path(__file__).parents[3] / "agent_params.yml"
+_CONFIG_PATH = Path(__file__).parents[2] / "agent_params.yml"
 
 
 @dataclass

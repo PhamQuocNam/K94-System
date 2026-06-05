@@ -21,6 +21,5 @@ class GoogleProvider(BaseLLMProvider):
         return ChatGoogleGenerativeAI(
             model=self.model,
             temperature=self.temperature,
-            max_output_tokens=self.max_tokens,
             google_api_key=self.api_key,
         )

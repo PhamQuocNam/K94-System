@@ -205,7 +205,7 @@ class StoryBoard(SQLModel, table=True):
     )
 
     content: str | None = Field(default=None)
-    scenes: str | None = Field(default=None)
+    scenes_json: str | None = Field(default=None)
     style: str | None = Field(default=None, max_length=255)
 
     # Relationships
@@ -213,6 +213,27 @@ class StoryBoard(SQLModel, table=True):
     characters: List["Character"] = Relationship(
         back_populates="storyboard",
         cascade_delete=True,
+    )
+    settings: List["Setting"] = Relationship(
+        back_populates="storyboard",
+        cascade_delete=True,
+    )
+    scenes: List["Scene"] = Relationship(
+        back_populates="storyboard",
+        cascade_delete=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Many-to-Many relationship link: Scene <-> Character
+# ---------------------------------------------------------------------------
+
+class SceneCharacterLink(SQLModel, table=True):
+    scene_id: uuid.UUID = Field(
+        foreign_key="scene.id", nullable=False, ondelete="CASCADE", primary_key=True
+    )
+    character_id: uuid.UUID = Field(
+        foreign_key="character.id", nullable=False, ondelete="CASCADE", primary_key=True
     )
 
 
@@ -237,6 +258,66 @@ class Character(SQLModel, table=True):
     clothes: str | None = Field(default=None, max_length=255)
     nationality: str | None = Field(default=None, max_length=255)
     source: str | None = Field(default=None, max_length=2048)
+    reference_image_url: str | None = Field(default=None, max_length=2048)
 
     # Relationships
     storyboard: StoryBoard | None = Relationship(back_populates="characters")
+    scenes: List["Scene"] = Relationship(
+        back_populates="characters",
+        link_model=SceneCharacterLink,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Setting model
+# ---------------------------------------------------------------------------
+
+class Setting(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Foreign Keys
+    storyboard_id: uuid.UUID = Field(
+        foreign_key="storyboard.id", nullable=False, ondelete="CASCADE"
+    )
+    scene_start: int | None = Field(default=None)
+    scene_end: int| None = Field(default=None)
+    name: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None)
+    time_of_day: str | None = Field(default=None, max_length=100)
+    weather: str | None = Field(default=None, max_length=100)
+    art_style: str | None = Field(default=None, max_length=255)
+    reference_image_url: str | None = Field(default=None, max_length=2048)
+    
+    # Relationships
+    storyboard: StoryBoard | None = Relationship(back_populates="settings")
+    scenes: List["Scene"] = Relationship(back_populates="setting")
+
+
+# ---------------------------------------------------------------------------
+# Scene model
+# ---------------------------------------------------------------------------
+
+class Scene(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+
+    # Foreign Keys
+    storyboard_id: uuid.UUID = Field(
+        foreign_key="storyboard.id", nullable=False, ondelete="CASCADE"
+    )
+    setting_id: uuid.UUID | None = Field(
+        foreign_key="setting.id", nullable=True, ondelete="SET NULL"
+    )
+    title: str | None = Field(default=None, max_length=255)
+    sequence_number: int = Field(default=0)
+    visual_prompt: str | None = Field(default=None)
+    scene_type: str | None = Field(default=None, max_length=100)
+    reference_image_url: str | None = Field(default=None, max_length=2048)
+    reference_video_url: str | None = Field(default=None, max_length=2048)
+
+    # Relationships
+    storyboard: StoryBoard | None = Relationship(back_populates="scenes")
+    setting: Setting | None = Relationship(back_populates="scenes")
+    characters: List["Character"] = Relationship(
+        back_populates="scenes",
+        link_model=SceneCharacterLink,
+    )

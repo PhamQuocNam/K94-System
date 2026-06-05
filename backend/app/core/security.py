@@ -3,18 +3,13 @@ from typing import Any
 
 import jwt
 from pwdlib import PasswordHash
-from pwdlib.hashers.argon2 import Argon2Hasher
-from pwdlib.hashers.bcrypt import BcryptHasher
+from pwdlib.hashers import argon2, bcrypt
 
 from app.core.config import settings
 
-password_hash = PasswordHash(
-    (
-        Argon2Hasher(),
-        BcryptHasher(),
-    )
-)
-
+# Configure argon2 as default hasher with bcrypt as legacy for migration
+password_hasher = argon2.Argon2Hasher(memory_cost=65536, time_cost=3, parallelism=4)
+legacy_hasher = bcrypt.BcryptHasher()
 
 ALGORITHM = "HS256"
 
@@ -26,11 +21,37 @@ def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
     return encoded_jwt
 
 
+def get_password_hash(password: str) -> str:
+    return str(password_hasher.hash(password))
+
+
 def verify_password(
     plain_password: str, hashed_password: str
 ) -> tuple[bool, str | None]:
-    return password_hash.verify_and_update(plain_password, hashed_password)
+    """
+    Verify password and handle hash migration from bcrypt to argon2.
 
-
-def get_password_hash(password: str) -> str:
-    return password_hash.hash(password)
+    Returns:
+        tuple[bool, str | None]: (is_valid, updated_hash)
+        - is_valid: True if password is correct
+        - updated_hash: New argon2 hash if password was bcrypt and needs upgrade, None otherwise
+    """
+    # Check if the hash is a bcrypt hash (starts with $2)
+    if hashed_password.startswith("$2"):
+        # Legacy bcrypt hash - verify with bcrypt and upgrade to argon2
+        try:
+            verified = legacy_hasher.verify(plain_password, hashed_password)
+            if verified:
+                # Upgrade to argon2 hash
+                new_hash = str(password_hasher.hash(plain_password))
+                return True, new_hash
+            return False, None
+        except Exception:
+            return False, None
+    else:
+        # Argon2 hash - verify with argon2
+        try:
+            result = password_hasher.verify(plain_password, hashed_password)
+            return bool(result), None
+        except Exception:
+            return False, None
