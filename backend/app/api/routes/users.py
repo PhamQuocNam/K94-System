@@ -12,11 +12,10 @@ from app.api.deps import (
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
-from app.models import (
-    Item,
-    Message,
+from app.models import Item, User
+from app.schemas.auth import Message
+from app.schemas.user import (
     UpdatePassword,
-    User,
     UserCreate,
     UserPublic,
     UserRegister,
@@ -107,7 +106,7 @@ def update_password_me(
     """
     Update own password.
     """
-    verified, _ = verify_password(body.current_password, current_user.hashed_password)
+    verified, new_hash = verify_password(body.current_password, current_user.hashed_password)
     if not verified:
         raise HTTPException(status_code=400, detail="Incorrect password")
     if body.current_password == body.new_password:

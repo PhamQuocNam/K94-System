@@ -4,7 +4,10 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import Item, Project, User
+from app.schemas.item import ItemCreate
+from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.schemas.user import UserCreate, UserUpdate
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -49,14 +52,14 @@ def authenticate(*, session: Session, email: str, password: str) -> User | None:
         # This ensures the response time is similar whether or not the email exists
         verify_password(password, DUMMY_HASH)
         return None
-    verified, updated_password_hash = verify_password(password, db_user.hashed_password)
+    verified, new_hash = verify_password(password, db_user.hashed_password)
     if not verified:
         return None
-    if updated_password_hash:
-        db_user.hashed_password = updated_password_hash
+    # If password hash was upgraded from bcrypt to argon2, save the new hash
+    if new_hash:
+        db_user.hashed_password = new_hash
         session.add(db_user)
         session.commit()
-        session.refresh(db_user)
     return db_user
 
 
@@ -66,3 +69,38 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def create_project(*, session: Session, project_in: ProjectCreate, user_id: uuid.UUID) -> Project:
+    db_project = Project.model_validate(project_in, update={"user_id": user_id})
+    session.add(db_project)
+    session.commit()
+    session.refresh(db_project)
+    return db_project
+
+
+def update_project(*, session: Session, db_project: Project, project_in: ProjectUpdate) -> Project:
+    project_data = project_in.model_dump(exclude_unset=True)
+    db_project.sqlmodel_update(project_data)
+    session.add(db_project)
+    session.commit()
+    session.refresh(db_project)
+    return db_project
+
+
+def get_project_by_id(*, session: Session, project_id: uuid.UUID) -> Project | None:
+    return session.get(Project, project_id)
+
+
+def get_projects_by_user(*, session: Session, user_id: uuid.UUID) -> list[Project]:
+    statement = select(Project).where(Project.user_id == user_id)
+    return session.exec(statement).all()
+
+
+def delete_project(*, session: Session, project_id: uuid.UUID) -> bool:
+    project = session.get(Project, project_id)
+    if not project:
+        return False
+    session.delete(project)
+    session.commit()
+    return True
