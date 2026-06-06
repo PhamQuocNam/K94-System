@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CreateProjectEndpointData, CreateProjectEndpointResponse, ListProjectsData, ListProjectsResponse, GetProjectData, GetProjectResponse, UpdateProjectEndpointData, UpdateProjectEndpointResponse, DeleteProjectEndpointData, DeleteProjectEndpointResponse, CreateStoryboardData, CreateStoryboardResponse, GetStoryboardData, GetStoryboardResponse, UpdateStoryboardData, UpdateStoryboardResponse, GetStoryboardCharactersData, GetStoryboardCharactersResponse, GetStoryboardSettingsData, GetStoryboardSettingsResponse, GetStoryboardScenesData, GetStoryboardScenesResponse, AnalyzeStoryData, AnalyzeStoryResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CreateProjectEndpointData, CreateProjectEndpointResponse, ListProjectsData, ListProjectsResponse, GetProjectData, GetProjectResponse, UpdateProjectEndpointData, UpdateProjectEndpointResponse, DeleteProjectEndpointData, DeleteProjectEndpointResponse, GetStoryboardByProjectIdData, GetStoryboardByProjectIdResponse, CreateStoryboardData, CreateStoryboardResponse, GetStoryboardData, GetStoryboardResponse, UpdateStoryboardData, UpdateStoryboardResponse, GetStoryboardCharactersData, GetStoryboardCharactersResponse, GetStoryboardSettingsData, GetStoryboardSettingsResponse, GetStoryboardScenesData, GetStoryboardScenesResponse, AnalyzeStoryData, AnalyzeStoryResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class DefaultService {
     /**
@@ -157,6 +157,35 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'DELETE',
             url: '/api/v1/projects/{project_id}',
+            path: {
+                project_id: data.projectId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Storyboard By Project Id
+     * Get storyboard by project ID.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * project_id: Project UUID
+     *
+     * Returns:
+     * Storyboard if exists, null otherwise
+     * @param data The data for the request.
+     * @param data.projectId
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getStoryboardByProjectId(data: GetStoryboardByProjectIdData): CancelablePromise<GetStoryboardByProjectIdResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/storyboards/by-project/{project_id}',
             path: {
                 project_id: data.projectId
             },

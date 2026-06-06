@@ -42,7 +42,7 @@ export type OpenAPIConfig = {
 
 const API_BASE = typeof import.meta.env !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
 	? import.meta.env.VITE_API_BASE_URL
-	: 'http://localhost:8000';
+	: '';
 
 export const OpenAPI: OpenAPIConfig = {
 	BASE: API_BASE,
@@ -50,7 +50,7 @@ export const OpenAPI: OpenAPIConfig = {
 	ENCODE_PATH: undefined,
 	HEADERS: undefined,
 	PASSWORD: undefined,
-	TOKEN: () => {
+	TOKEN: async () => {
 		if (typeof localStorage !== 'undefined') {
 			return localStorage.getItem('access_token') || '';
 		}

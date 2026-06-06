@@ -243,6 +243,12 @@ export type DeleteProjectEndpointData = {
 
 export type DeleteProjectEndpointResponse = (Message);
 
+export type GetStoryboardByProjectIdData = {
+    projectId: string;
+};
+
+export type GetStoryboardByProjectIdResponse = ((StoryBoard | null));
+
 export type CreateStoryboardData = {
     requestBody: StoryBoardCreate;
 };
