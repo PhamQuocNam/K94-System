@@ -20,7 +20,7 @@ import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutProjectsIndexRouteImport } from './routes/_layout/projects/index'
 import { Route as LayoutProjectsNewRouteImport } from './routes/_layout/projects/new'
-import { Route as LayoutProjectsIdRouteImport } from './routes/_layout/projects/$id'
+import { Route as LayoutProjectsIdIndexRouteImport } from './routes/_layout/projects/$id/index'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -76,9 +76,9 @@ const LayoutProjectsNewRoute = LayoutProjectsNewRouteImport.update({
   path: '/projects/new',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutProjectsIdRoute = LayoutProjectsIdRouteImport.update({
-  id: '/projects/$id',
-  path: '/projects/$id',
+const LayoutProjectsIdIndexRoute = LayoutProjectsIdIndexRouteImport.update({
+  id: '/projects/$id/',
+  path: '/projects/$id/',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -91,9 +91,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
-  '/projects/$id': typeof LayoutProjectsIdRoute
   '/projects/new': typeof LayoutProjectsNewRoute
   '/projects/': typeof LayoutProjectsIndexRoute
+  '/projects/$id/': typeof LayoutProjectsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -104,9 +104,9 @@ export interface FileRoutesByTo {
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
-  '/projects/$id': typeof LayoutProjectsIdRoute
   '/projects/new': typeof LayoutProjectsNewRoute
   '/projects': typeof LayoutProjectsIndexRoute
+  '/projects/$id': typeof LayoutProjectsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -119,9 +119,9 @@ export interface FileRoutesById {
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
-  '/_layout/projects/$id': typeof LayoutProjectsIdRoute
   '/_layout/projects/new': typeof LayoutProjectsNewRoute
   '/_layout/projects/': typeof LayoutProjectsIndexRoute
+  '/_layout/projects/$id/': typeof LayoutProjectsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -134,9 +134,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/items'
     | '/settings'
-    | '/projects/$id'
     | '/projects/new'
     | '/projects/'
+    | '/projects/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -147,9 +147,9 @@ export interface FileRouteTypes {
     | '/items'
     | '/settings'
     | '/'
-    | '/projects/$id'
     | '/projects/new'
     | '/projects'
+    | '/projects/$id'
   id:
     | '__root__'
     | '/_layout'
@@ -161,9 +161,9 @@ export interface FileRouteTypes {
     | '/_layout/items'
     | '/_layout/settings'
     | '/_layout/'
-    | '/_layout/projects/$id'
     | '/_layout/projects/new'
     | '/_layout/projects/'
+    | '/_layout/projects/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -253,11 +253,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutProjectsNewRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/projects/$id': {
-      id: '/_layout/projects/$id'
+    '/_layout/projects/$id/': {
+      id: '/_layout/projects/$id/'
       path: '/projects/$id'
-      fullPath: '/projects/$id'
-      preLoaderRoute: typeof LayoutProjectsIdRouteImport
+      fullPath: '/projects/$id/'
+      preLoaderRoute: typeof LayoutProjectsIdIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
   }
@@ -268,9 +268,9 @@ interface LayoutRouteChildren {
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
-  LayoutProjectsIdRoute: typeof LayoutProjectsIdRoute
   LayoutProjectsNewRoute: typeof LayoutProjectsNewRoute
   LayoutProjectsIndexRoute: typeof LayoutProjectsIndexRoute
+  LayoutProjectsIdIndexRoute: typeof LayoutProjectsIdIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -278,9 +278,9 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
-  LayoutProjectsIdRoute: LayoutProjectsIdRoute,
   LayoutProjectsNewRoute: LayoutProjectsNewRoute,
   LayoutProjectsIndexRoute: LayoutProjectsIndexRoute,
+  LayoutProjectsIdIndexRoute: LayoutProjectsIdIndexRoute,
 }
 
 const LayoutRouteWithChildren =

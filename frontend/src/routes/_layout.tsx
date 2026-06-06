@@ -1,4 +1,10 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router"
+import { useEffect } from "react"
 
 import { Footer } from "@/components/Common/Footer"
 import AppSidebar from "@/components/Sidebar/AppSidebar"
@@ -12,15 +18,35 @@ import { isLoggedIn } from "@/hooks/useAuth"
 export const Route = createFileRoute("/_layout")({
   component: Layout,
   beforeLoad: async () => {
-    if (!isLoggedIn()) {
+    const authenticated = isLoggedIn()
+    console.log("[Auth] beforeLoad check:", {
+      authenticated,
+      token: localStorage.getItem("access_token"),
+    })
+    if (!authenticated) {
+      console.log("[Auth] Redirecting to login...")
       throw redirect({
         to: "/login",
       })
     }
+    console.log("[Auth] User authenticated, proceeding...")
   },
 })
 
 function Layout() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      console.log("[Auth] Layout useEffect - not logged in, redirecting...")
+      navigate({ to: "/login", replace: true })
+    }
+  }, [navigate])
+
+  if (!isLoggedIn()) {
+    return null
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
