@@ -122,7 +122,8 @@ function ProjectDetailPage() {
           message = errorData.detail
           // Special handling for "already exists" error
           if (message.includes("already exists")) {
-            message += ". Please refresh the page to view the existing storyboard."
+            message +=
+              ". Please refresh the page to view the existing storyboard."
           }
         } else {
           message = error.message
@@ -133,8 +134,12 @@ function ProjectDetailPage() {
   })
 
   const analyzeMutation = useMutation({
-    mutationFn: () =>
-      DefaultService.analyzeStory({ storyboardId: storyboardId! }),
+    mutationFn: (generateImages: boolean = true) =>
+      DefaultService.analyzeStory({
+        storyboardId: storyboardId!,
+        generateImages,
+        style: storyboard?.style || "cinematic",
+      }),
     onSuccess: () => {
       toast.success("Story analysis completed!")
       queryClient.invalidateQueries({ queryKey: ["characters", storyboardId] })
@@ -155,7 +160,7 @@ function ProjectDetailPage() {
       return
     }
     setIsAnalyzing(true)
-    analyzeMutation.mutate()
+    analyzeMutation.mutate(true)
   }
 
   if (projectLoading) {
