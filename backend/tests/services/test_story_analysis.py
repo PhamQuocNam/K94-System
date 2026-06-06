@@ -202,10 +202,11 @@ class TestSaveCharacters:
 
     @pytest.mark.asyncio
     async def test_save_characters_basic(self, service, mock_session, storyboard_id):
-        """Test basic character saving."""
+        """Test basic character saving with character_type field."""
         characters_data = [
             {
                 "name": "John",
+                "character_type": "human",
                 "gender": "male",
                 "age": 35,
                 "body_build": "Tall",
@@ -232,9 +233,42 @@ class TestSaveCharacters:
         assert character.age == 35
 
     @pytest.mark.asyncio
+    async def test_save_characters_animal_character(self, service, mock_session, storyboard_id):
+        """Test saving animal character with character_type field."""
+        characters_data = [
+            {
+                "name": "Buddy",
+                "character_type": "dog",
+                "gender": "male",
+                "age": 5,
+                "body_build": "Medium-sized golden retriever",
+                "face": "Friendly muzzle and expressive brown eyes",
+                "hair": "Golden fur",
+                "clothes": "Red collar",
+                "nationality": ""
+            }
+        ]
+
+        result = await service._save_characters(
+            storyboard_id, characters_data, "cinematic", generate_images=False
+        )
+
+        assert result == 1
+        call_args = mock_session.add.call_args
+        character = call_args[0][0]
+        assert isinstance(character, Character)
+        assert character.name == "Buddy"
+
+    @pytest.mark.asyncio
     async def test_save_characters_with_image_generation(self, service, mock_session, storyboard_id):
         """Test character saving with image generation."""
-        characters_data = [{"name": "John", "body_build": "Tall"}]
+        characters_data = [
+            {
+                "name": "John",
+                "character_type": "human",
+                "body_build": "Tall"
+            }
+        ]
 
         mock_image_gen = AsyncMock()
         mock_image_gen.generate_character_reference.return_value = "http://example.com/john.jpg"
@@ -321,17 +355,32 @@ class TestAnalyzeStoryIntegration:
 
     @pytest.mark.asyncio
     async def test_analyze_story_full_flow(self, service, mock_session, storyboard_id):
-        """Test the complete story analysis flow."""
-        # Mock the LLM response
+        """Test the complete story analysis flow with updated prompt format."""
+        # Mock the LLM response with character_type field
         mock_llm_response = {
             "characters": [
-                {"name": "John", "gender": "male", "age": 35, "body_build": "Tall",
-                 "face": "Square", "hair": "Blond", "clothes": "Shirt", "nationality": "American"}
+                {
+                    "name": "John",
+                    "character_type": "human",
+                    "gender": "male",
+                    "age": 35,
+                    "body_build": "Tall",
+                    "face": "Square",
+                    "hair": "Blond",
+                    "clothes": "Shirt",
+                    "nationality": "American"
+                }
             ],
             "scenes": [
-                {"sequence_number": 1, "title": "Scene 1", "narrative_description": "In forest",
-                 "visual_description": "Trees", "scene_type": "action",
-                 "characters_present": ["John"], "setting_name": "Forest"}
+                {
+                    "sequence_number": 1,
+                    "title": "Scene 1",
+                    "narrative_description": "In forest",
+                    "visual_description": "Trees",
+                    "scene_type": "action",
+                    "characters_present": ["John"],
+                    "setting_name": "Forest"
+                }
             ]
         }
 
@@ -352,6 +401,54 @@ class TestAnalyzeStoryIntegration:
 
             result = await service.analyze_story(
                 storyboard_id, "John walks into the forest.", style="cinematic", generate_images=False
+            )
+
+        assert result["characters_extracted"] == 1
+        assert result["settings_extracted"] == 1
+        assert result["scenes_extracted"] == 1
+
+    @pytest.mark.asyncio
+    async def test_analyze_story_with_animal_characters(self, service, mock_session, storyboard_id):
+        """Test story analysis with animal characters."""
+        # Mock the LLM response with animal characters
+        mock_llm_response = {
+            "characters": [
+                {
+                    "name": "Buddy",
+                    "character_type": "dog",
+                    "gender": "male",
+                    "age": 5,
+                    "body_build": "Medium-sized golden retriever",
+                    "face": "Friendly muzzle",
+                    "hair": "Golden fur",
+                    "clothes": "Red collar",
+                    "nationality": ""
+                }
+            ],
+            "scenes": [
+                {
+                    "sequence_number": 1,
+                    "title": "Buddy Plays",
+                    "narrative_description": "Buddy runs in the park",
+                    "visual_description": "Golden dog running",
+                    "scene_type": "action",
+                    "characters_present": [],
+                    "setting_name": "Park"
+                }
+            ]
+        }
+
+        async def mock_invoke(input_dict):
+            return mock_llm_response
+
+        mock_chain = AsyncMock()
+        mock_chain.ainvoke = mock_invoke
+
+        with patch("app.services.story_analysis.RunnableParallel", return_value=mock_chain):
+            mock_session.exec.return_value.all.return_value = []
+
+            result = await service.analyze_story(
+                storyboard_id, "Buddy the dog plays in the park.", style="cinematic", generate_images=False
             )
 
         assert result["characters_extracted"] == 1

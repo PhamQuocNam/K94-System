@@ -29,6 +29,39 @@ class StoryBoardUpdate(BaseModel):
     style: str | None = None
 
 
+@router.get("/storyboards/by-project/{project_id}")
+def get_storyboard_by_project_id(
+    session: SessionDep,
+    current_user: CurrentUser,
+    project_id: uuid.UUID,
+) -> StoryBoard | None:
+    """Get storyboard by project ID.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        project_id: Project UUID
+
+    Returns:
+        Storyboard if exists, null otherwise
+    """
+    from app.models import Project
+
+    # Verify project belongs to user
+    project = session.get(Project, project_id)
+    if not project or project.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    storyboard = session.exec(
+        select(StoryBoard).where(StoryBoard.project_id == project_id)
+    ).first()
+
+    return storyboard
+
+
 @router.post("/storyboards")
 def create_storyboard(
     session: SessionDep,

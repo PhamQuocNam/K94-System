@@ -15,23 +15,54 @@ For each character, provide:
 - face: Facial features description
 - hair: Hair style and color
 - clothes: Typical clothing/attire
-- nationality: Ethnicity or nationality if mentioned
+- nationality: Ethnicity or nationality
 
-Return ONLY a valid JSON array of characters. Each character must have all fields.
-If a field cannot be determined from the story, use null or empty string.
-Example output format:
-[
-    {{
-        "name": "John",
-        "gender": "male",
-        "age": 35,
-        "body_build": "Tall and athletic",
-        "face": "Square jaw, blue eyes",
-        "hair": "Short blond hair",
-        "clothes": "Blue button-down shirt",
-        "nationality": "American"
-    }}
-]"""),
+Rules:
+1. If a visual attribute is explicitly described in the story, use that description.
+2. If an attribute is not described, generate a realistic appearance consistent with the story.
+3. Never leave visual fields empty.
+4. For non-human characters:
+- Adapt fields naturally.
+- Use species traits when applicable.
+- If a field does not logically apply, provide a suitable equivalent description.
+5. Age should be an estimated integer.
+6. Return ONLY a valid JSON array.
+
+JSON REQUIREMENTS:
+- Return ONLY valid JSON.
+- Return a JSON array.
+- No markdown.
+- No explanations.
+- No code blocks.
+- No text before or after JSON.
+
+Examples:
+Human:
+{{
+"name": "John",
+"character_type": "human",
+"gender": "male",
+"age": 35,
+"body_build": "Tall athletic man",
+"face": "Square jaw and blue eyes",
+"hair": "Short blond hair",
+"clothes": "Blue shirt and jeans",
+"nationality": "American"
+}}
+
+Animal:
+{{
+"name": "Buddy",
+"character_type": "dog",
+"gender": "male",
+"age": 5,
+"body_build": "Medium-sized golden retriever",
+"face": "Friendly muzzle and expressive brown eyes",
+"hair": "Golden fur",
+"clothes": "Red collar",
+"nationality": ""
+}}
+"""),
     ("human", """Story to analyze:
 {story}
 
@@ -58,7 +89,6 @@ For each setting provide:
 - time_of_day: morning, afternoon, evening, night, dawn, dusk, or unknown
 - weather: weather conditions or unknown
 - art_style: visual style suitable for image generation
-- dominant_colors: list of main colors associated with the setting
 
 INFERENCE RULES
 If a field is explicitly described in the story:
@@ -67,7 +97,7 @@ If a field is explicitly described in the story:
 If a field is not described:
 - Infer a reasonable value based on the story context, genre, mood, and surrounding events.
 - Keep the inference realistic and consistent with the story.
-- Do not invent major story details.
+- Never let the field empty, null or unknown.
 
 DESCRIPTION GUIDELINES
 The description should be detailed enough for image generation and include:
@@ -121,7 +151,6 @@ SCENE SEGMENTATION RULES:
 5. Every scene should be visually representable.
 
 For each scene return:
-
 - sequence_number: integer
 - title: short scene title
 - narrative_description: detailed description of what happens

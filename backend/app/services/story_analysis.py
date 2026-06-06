@@ -43,7 +43,7 @@ class StoryAnalysisService:
         storyboard_id: uuid.UUID,
         story_content: str,
         style: str = "cinematic",
-        generate_images: bool = True,
+        generate_images: bool = False,
     ) -> dict[str, Any]:
         """Analyze a story and extract characters, settings, and scenes.
 
