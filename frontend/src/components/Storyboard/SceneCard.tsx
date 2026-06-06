@@ -1,11 +1,11 @@
 import { Film } from "lucide-react"
-import type { SceneSchema } from "@/client/schemas.gen"
+import type { Scene } from "@/client/types.gen"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface SceneCardProps {
-  scene: SceneSchema
+  scene: Scene
   isLoading?: boolean
 }
 
@@ -48,9 +48,9 @@ export function SceneCard({ scene, isLoading }: SceneCardProps) {
           </div>
         )}
 
-        {scene.setting_name && (
+        {scene.title && (
           <Badge variant="secondary" className="text-xs">
-            📍 {scene.setting_name}
+            📍 {scene.title}
           </Badge>
         )}
 

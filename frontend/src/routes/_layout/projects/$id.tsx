@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { ArrowLeft, BookOpen, Pencil, Wand2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
@@ -52,20 +52,21 @@ export const Route = createFileRoute("/_layout/projects/$id")({
 
 function ProjectDetailPage() {
   const { id: projectId } = Route.useParams()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [storyboardId, setStoryboardId] = useState<string | null>(null)
-  const [editStoryboardDialogOpen, setEditStoryboardDialogOpen] = useState(false)
+  const [editStoryboardDialogOpen, setEditStoryboardDialogOpen] =
+    useState(false)
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => DefaultService.getProject({ projectId }),
   })
 
-  const { data: storyboard, isLoading: storyboardLoading } = useQuery({
+  const { data: storyboard } = useQuery({
     queryKey: ["storyboard", storyboardId],
-    queryFn: () => DefaultService.getStoryboard({ storyboardId: storyboardId! }),
+    queryFn: () =>
+      DefaultService.getStoryboard({ storyboardId: storyboardId! }),
     enabled: !!storyboardId,
   })
 
@@ -108,8 +109,10 @@ function ProjectDetailPage() {
       }),
     onSuccess: (response) => {
       toast.success("Storyboard created!")
-      setStoryboardId(response.id)
-      sessionStorage.setItem(`storyboard_${projectId}`, response.id)
+      if (response.id) {
+        setStoryboardId(response.id)
+        sessionStorage.setItem(`storyboard_${projectId}`, response.id)
+      }
     },
     onError: (error: unknown) => {
       const message =
@@ -129,8 +132,7 @@ function ProjectDetailPage() {
       setIsAnalyzing(false)
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Analysis failed"
+      const message = error instanceof Error ? error.message : "Analysis failed"
       toast.error(message)
       setIsAnalyzing(false)
     },
@@ -200,7 +202,7 @@ function ProjectDetailPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
-                    {storyboard.title || "Storyboard"}
+                    Storyboard
                   </CardTitle>
                   <Button
                     variant="ghost"
@@ -263,7 +265,10 @@ function ProjectDetailPage() {
                   ) : characters && characters.length > 0 ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {characters.map((character) => (
-                        <CharacterCard key={character.id} character={character} />
+                        <CharacterCard
+                          key={character.id}
+                          character={character}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -318,12 +323,12 @@ function ProjectDetailPage() {
         </div>
       )}
 
-      {storyboard && (
+      {storyboard && storyboard.id && (
         <EditStoryboardDialog
           storyboardId={storyboard.id}
           open={editStoryboardDialogOpen}
           onOpenChange={setEditStoryboardDialogOpen}
-          currentContent={storyboard.content}
+          currentContent={storyboard.content || ""}
           currentStyle={storyboard.style}
         />
       )}
@@ -338,7 +343,7 @@ interface CreateStoryboardFormProps {
 }
 
 function CreateStoryboardForm({
-  projectId,
+  projectId: _projectId,
   onSubmit,
   isLoading,
 }: CreateStoryboardFormProps) {

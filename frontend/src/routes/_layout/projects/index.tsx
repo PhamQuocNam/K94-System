@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { DefaultService } from "@/client"
+import type { ProjectPublic } from "@/client"
 import {
   DeleteProjectDialog,
   EditProjectDialog,
@@ -29,11 +30,9 @@ function ProjectsPage() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [selectedProject, setSelectedProject] = useState<{
-    id: string
-    title: string
-    description?: string | null
-  } | null>(null)
+  const [selectedProject, setSelectedProject] = useState<ProjectPublic | null>(
+    null,
+  )
 
   return (
     <div className="space-y-6">
@@ -96,12 +95,14 @@ function ProjectsPage() {
                 </CardTitle>
                 <ProjectActions
                   projectId={project.id}
-                  onEdit={() =>
-                    setSelectedProject(project) || setEditDialogOpen(true)
-                  }
-                  onDelete={() =>
-                    setSelectedProject(project) || setDeleteDialogOpen(true)
-                  }
+                  onEdit={() => {
+                    setSelectedProject(project)
+                    setEditDialogOpen(true)
+                  }}
+                  onDelete={() => {
+                    setSelectedProject(project)
+                    setDeleteDialogOpen(true)
+                  }}
                 />
               </CardHeader>
               <CardContent>
@@ -109,7 +110,9 @@ function ProjectsPage() {
                   {project.description || "No description"}
                 </p>
                 <Button asChild variant="ghost" size="sm" className="w-full">
-                  <Link to={`/projects/${project.id}`}>View Project →</Link>
+                  <Link to="/projects/$id" params={{ id: project.id }}>
+                    View Project →
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

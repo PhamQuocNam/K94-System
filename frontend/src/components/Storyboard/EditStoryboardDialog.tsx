@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -85,8 +84,8 @@ export function EditStoryboardDialog({
         <DialogHeader>
           <DialogTitle>Edit Storyboard</DialogTitle>
           <DialogDescription>
-            Update your story content or visual style. Changes will affect future
-            analysis.
+            Update your story content or visual style. Changes will affect
+            future analysis.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

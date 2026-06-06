@@ -1,7 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "@tanstack/react-router"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
@@ -42,8 +40,8 @@ interface EditProjectDialogProps {
   projectId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentTitle: string
-  currentDescription?: string | null
+  currentTitle: string | null | undefined
+  currentDescription?: string | null | undefined
 }
 
 export function EditProjectDialog({
@@ -54,7 +52,6 @@ export function EditProjectDialog({
   currentDescription,
 }: EditProjectDialogProps) {
   const queryClient = useQueryClient()
-  const router = useRouter()
 
   const form = useForm<ProjectForm>({
     resolver: zodResolver(projectSchema),

@@ -1,11 +1,11 @@
 import { User } from "lucide-react"
-import type { CharacterSchema } from "@/client/schemas.gen"
+import type { Character } from "@/client/types.gen"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface CharacterCardProps {
-  character: CharacterSchema
+  character: Character
   isLoading?: boolean
 }
 
@@ -34,22 +34,13 @@ export function CharacterCard({ character, isLoading }: CharacterCardProps) {
               {character.age} years old
             </Badge>
           )}
-          {character.role && (
-            <Badge variant="default" className="text-xs">
-              {character.role}
-            </Badge>
-          )}
         </div>
 
-        {(character.appearance_summary ||
-          character.body_build ||
+        {(character.body_build ||
           character.face ||
           character.hair ||
           character.clothes) && (
           <div className="space-y-1 text-sm text-muted-foreground">
-            {character.appearance_summary && (
-              <p>{character.appearance_summary}</p>
-            )}
             {character.body_build && (
               <p>
                 <span className="font-medium">Build:</span>{" "}

@@ -1,11 +1,11 @@
 import { MapPin } from "lucide-react"
-import type { SettingSchema } from "@/client/schemas.gen"
+import type { Setting } from "@/client/types.gen"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface SettingCardProps {
-  setting: SettingSchema
+  setting: Setting
   isLoading?: boolean
 }
 
