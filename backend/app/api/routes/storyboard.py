@@ -59,6 +59,7 @@ def create_storyboard(
     existing = session.exec(
         select(StoryBoard).where(StoryBoard.project_id == storyboard_in.project_id)
     ).first()
+    
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -284,7 +285,7 @@ async def analyze_story(
     current_user: CurrentUser,
     storyboard_id: uuid.UUID,
     style: str = "cinematic",
-    generate_images: bool = True,
+    generate_images: bool = False,
 ) -> dict[str, Any]:
     """Analyze story content and extract characters, settings, and scenes.
 
@@ -298,6 +299,7 @@ async def analyze_story(
     Returns:
         Analysis results with counts
     """
+    generate_images=False
     storyboard = session.get(StoryBoard, storyboard_id)
     if not storyboard:
         raise HTTPException(
@@ -327,6 +329,30 @@ async def analyze_story(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Story content is too short. Please provide a full story (at least 50 characters).",
         )
+
+    # Delete existing analysis data before re-analyzing
+    # Delete characters
+    existing_characters = session.exec(
+        select(Character).where(Character.storyboard_id == storyboard_id)
+    ).all()
+    for character in existing_characters:
+        session.delete(character)
+
+    # Delete settings
+    existing_settings = session.exec(
+        select(Setting).where(Setting.storyboard_id == storyboard_id)
+    ).all()
+    for setting in existing_settings:
+        session.delete(setting)
+
+    # Delete scenes
+    existing_scenes = session.exec(
+        select(Scene).where(Scene.storyboard_id == storyboard_id)
+    ).all()
+    for scene in existing_scenes:
+        session.delete(scene)
+
+    session.commit()
 
     # Run story analysis
     service = StoryAnalysisService(session)
