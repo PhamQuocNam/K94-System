@@ -114,8 +114,20 @@ function ProjectDetailPage() {
       }
     },
     onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Failed to create storyboard"
+      let message = "Failed to create storyboard"
+      if (error instanceof Error) {
+        // Try to extract detail from API error response
+        const errorData = (error as any).cause?.response?.data
+        if (errorData?.detail) {
+          message = errorData.detail
+          // Special handling for "already exists" error
+          if (message.includes("already exists")) {
+            message += ". Please refresh the page to view the existing storyboard."
+          }
+        } else {
+          message = error.message
+        }
+      }
       toast.error(message)
     },
   })
