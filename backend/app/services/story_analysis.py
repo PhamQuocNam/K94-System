@@ -3,6 +3,7 @@
 import uuid
 from typing import Any
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.runnables import RunnableParallel
 from sqlmodel import Session, select
@@ -58,12 +59,20 @@ class StoryAnalysisService:
         logger.info("Starting story analysis", storyboard_id=str(storyboard_id), style=style, generate_images=generate_images)
 
         # Step 1: Extract characters and scenes in parallel
-        extraction_chain = RunnableParallel(
-            characters=CHARACTER_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
-            scenes=SCENE_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
-        )
+        try:
+            extraction_chain = RunnableParallel(
+                characters=CHARACTER_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
+                scenes=SCENE_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
+            )
 
-        result = await extraction_chain.ainvoke({"story": story_content})
+            result = await extraction_chain.ainvoke({"story": story_content})
+        except OutputParserException as e:
+            logger.error("LLM output parsing failed", error=str(e), llm_output=str(e.llm_output) if hasattr(e, 'llm_output') else 'N/A')
+            raise ValueError(
+                f"Failed to parse LLM response. The story content may be too short or unclear. "
+                f"Please provide a complete story with dialogue and descriptions. "
+                f"LLM said: {str(e)}"
+            ) from e
         logger.debug("LLM extraction completed", characters=len(result.get("characters", [])), scenes=len(result.get("scenes", [])))
 
         # Step 2: Save scenes first (needed for settings)

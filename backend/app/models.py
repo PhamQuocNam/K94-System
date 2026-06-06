@@ -309,8 +309,9 @@ class Scene(SQLModel, table=True):
     )
     title: str | None = Field(default=None, max_length=255)
     sequence_number: int = Field(default=0)
-    visual_prompt: str | None = Field(default=None)
-    scene_type: str | None = Field(default=None, max_length=100)
+    narrative_description: str | None = Field(default=None)
+    visual_description: str | None = Field(default=None)
+
     reference_image_url: str | None = Field(default=None, max_length=2048)
     reference_video_url: str | None = Field(default=None, max_length=2048)
 

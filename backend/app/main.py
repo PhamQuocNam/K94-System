@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -6,6 +8,8 @@ from starlette.middleware.cors import CORSMiddleware
 from app.api.main import api_router
 from app.core.config import settings
 from app.core.logging import logger, setup_logging
+
+load_dotenv()
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:

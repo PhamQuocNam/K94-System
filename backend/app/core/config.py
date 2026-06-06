@@ -50,6 +50,8 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
+    LOG_LEVEL: str = "INFO"
+    LOG_FILE: str | None = "logs/app.log"
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str

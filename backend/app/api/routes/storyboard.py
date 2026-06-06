@@ -112,6 +112,53 @@ def get_storyboard(
     return storyboard
 
 
+@router.put("/storyboards/{storyboard_id}")
+def update_storyboard(
+    session: SessionDep,
+    current_user: CurrentUser,
+    storyboard_id: uuid.UUID,
+    storyboard_in: StoryBoardUpdate,
+) -> StoryBoard:
+    """Update a storyboard.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        storyboard_id: Storyboard UUID
+        storyboard_in: Update data
+
+    Returns:
+        Updated storyboard
+    """
+    storyboard = session.get(StoryBoard, storyboard_id)
+    if not storyboard:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Storyboard not found",
+        )
+
+    # Verify ownership through project
+    from app.models import Project
+
+    project = session.get(Project, storyboard.project_id)
+    if not project or project.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this storyboard",
+        )
+
+    # Update only provided fields
+    if storyboard_in.content is not None:
+        storyboard.content = storyboard_in.content
+    if storyboard_in.style is not None:
+        storyboard.style = storyboard_in.style
+
+    session.add(storyboard)
+    session.commit()
+    session.refresh(storyboard)
+    return storyboard
+
+
 @router.get("/storyboards/{storyboard_id}/characters")
 def get_storyboard_characters(
     session: SessionDep,
@@ -268,10 +315,17 @@ async def analyze_story(
             detail="Not authorized",
         )
 
-    if not storyboard.content:
+    if not storyboard.content or not storyboard.content.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Storyboard content is empty",
+        )
+
+    # Validate minimum content length (at least 50 characters to avoid just titles)
+    if len(storyboard.content.strip()) < 50:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Story content is too short. Please provide a full story (at least 50 characters).",
         )
 
     # Run story analysis
