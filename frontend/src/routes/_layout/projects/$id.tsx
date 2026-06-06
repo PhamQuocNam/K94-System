@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { ArrowLeft, BookOpen, Wand2 } from "lucide-react"
+import { ArrowLeft, BookOpen, Pencil, Wand2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -10,6 +10,7 @@ import { DefaultService } from "@/client"
 import {
   CharacterCard,
   CharacterCardSkeleton,
+  EditStoryboardDialog,
   SceneCard,
   SceneCardSkeleton,
   SettingCard,
@@ -55,6 +56,7 @@ function ProjectDetailPage() {
   const queryClient = useQueryClient()
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [storyboardId, setStoryboardId] = useState<string | null>(null)
+  const [editStoryboardDialogOpen, setEditStoryboardDialogOpen] = useState(false)
 
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", projectId],
@@ -195,10 +197,20 @@ function ProjectDetailPage() {
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {storyboard.title || "Storyboard"}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    {storyboard.title || "Storyboard"}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setEditStoryboardDialogOpen(true)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
                 {storyboard.style && (
                   <CardDescription>
                     <Badge variant="secondary">{storyboard.style}</Badge>
@@ -304,6 +316,16 @@ function ProjectDetailPage() {
             )}
           </div>
         </div>
+      )}
+
+      {storyboard && (
+        <EditStoryboardDialog
+          storyboardId={storyboard.id}
+          open={editStoryboardDialogOpen}
+          onOpenChange={setEditStoryboardDialogOpen}
+          currentContent={storyboard.content}
+          currentStyle={storyboard.style}
+        />
       )}
     </div>
   )
