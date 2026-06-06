@@ -59,7 +59,7 @@ const EditItem = ({ item, onSuccess }: EditItemProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      ItemsService.updateItemApiV1ItemsIdPut({
+      ItemsService.updateItem({
         id: item.id,
         requestBody: data,
       }),

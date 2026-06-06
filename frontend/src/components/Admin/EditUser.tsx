@@ -75,7 +75,7 @@ const EditUser = ({ user, onSuccess }: EditUserProps) => {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
-      UsersService.updateUserApiV1UsersUserIdPatch({
+      UsersService.updateUser({
         userId: user.id,
         requestBody: data,
       }),
