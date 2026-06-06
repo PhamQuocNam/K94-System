@@ -40,16 +40,25 @@ export type OpenAPIConfig = {
 	};
 };
 
+const API_BASE = typeof import.meta.env !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
+	? import.meta.env.VITE_API_BASE_URL
+	: 'http://localhost:8000';
+
 export const OpenAPI: OpenAPIConfig = {
-	BASE: '',
+	BASE: API_BASE,
 	CREDENTIALS: 'include',
 	ENCODE_PATH: undefined,
 	HEADERS: undefined,
 	PASSWORD: undefined,
-	TOKEN: undefined,
+	TOKEN: () => {
+		if (typeof localStorage !== 'undefined') {
+			return localStorage.getItem('access_token') || '';
+		}
+		return '';
+	},
 	USERNAME: undefined,
 	VERSION: '0.1.0',
-	WITH_CREDENTIALS: false,
+	WITH_CREDENTIALS: true,
 	interceptors: {
 		request: new Interceptors(),
 		response: new Interceptors(),
