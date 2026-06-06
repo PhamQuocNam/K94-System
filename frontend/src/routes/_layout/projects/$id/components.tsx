@@ -1,5 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card } from "@/components/ui/card"
 
 export function PageSkeleton() {
   return (
@@ -50,7 +49,11 @@ export function TabContent({
   }
 
   if (empty) {
-    return <Card className="p-8 text-center text-muted-foreground">{emptyMessage}</Card>
+    return (
+      <Card className="p-8 text-center text-muted-foreground">
+        {emptyMessage}
+      </Card>
+    )
   }
 
   return <>{children}</>

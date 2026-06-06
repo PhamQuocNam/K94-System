@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { ArrowLeft, BookOpen, Pencil, Wand2 } from "lucide-react"
 import { useState } from "react"
@@ -42,7 +42,12 @@ import {
   PageSkeleton,
   SKELETON_COUNTS,
 } from "./components"
-import { getApiErrorMessage, showApiError, useStoryboard, useStoryboardAnalysis } from "./hooks"
+import {
+  getApiErrorMessage,
+  showApiError,
+  useStoryboard,
+  useStoryboardAnalysis,
+} from "./hooks"
 
 const storyboardSchema = z.object({
   content: z.string().min(50, "Content must be at least 50 characters"),
@@ -57,6 +62,7 @@ export const Route = createFileRoute("/_layout/projects/$id/")({
 
 function ProjectDetailPage() {
   const { id: projectId } = Route.useParams()
+  const queryClient = useQueryClient()
   const { storyboardId, storyboard, setStoryboardId } = useStoryboard(projectId)
 
   const {
@@ -89,14 +95,17 @@ function ProjectDetailPage() {
   })
 
   const analyzeMutation = useMutation({
-    mutationFn: (generateImages: boolean = true) =>
-      DefaultService.analyzeStory({
-        storyboardId: storyboardId!,
+    mutationFn: (generateImages: boolean = true) => {
+      if (!storyboardId) {
+        throw new Error("Storyboard not found")
+      }
+      return DefaultService.analyzeStory({
+        storyboardId,
         generateImages,
         style: storyboard?.style || "cinematic",
-      }),
+      })
+    },
     onSuccess: () => {
-      const queryClient = (analyzeMutation as any).getQueryClient()
       invalidateAll(queryClient)
     },
     onError: (error) => showApiError(error, "Analysis failed"),
@@ -162,7 +171,8 @@ function ProjectDetailView({
     queryFn: () => DefaultService.getProject({ projectId }),
   })
 
-  const [editStoryboardDialogOpen, setEditStoryboardDialogOpen] = useState(false)
+  const [editStoryboardDialogOpen, setEditStoryboardDialogOpen] =
+    useState(false)
 
   if (projectLoading) return <PageSkeleton />
 
@@ -181,7 +191,10 @@ function ProjectDetailView({
       />
 
       {!storyboard ? (
-        <CreateStoryboardForm onSubmit={onCreateStoryboard} isLoading={isCreating} />
+        <CreateStoryboardForm
+          onSubmit={onCreateStoryboard}
+          isLoading={isCreating}
+        />
       ) : (
         <StoryboardContent
           storyboard={storyboard}
@@ -216,7 +229,12 @@ interface ProjectHeaderProps {
   isAnalyzing: boolean
 }
 
-function ProjectHeader({ project, storyboard, onAnalyze, isAnalyzing }: ProjectHeaderProps) {
+function ProjectHeader({
+  project,
+  storyboard,
+  onAnalyze,
+  isAnalyzing,
+}: ProjectHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -347,23 +365,30 @@ function AnalysisTabs({
   scenes,
   scenesLoading,
 }: AnalysisTabsProps) {
-  const characterSkeletons = Array.from({ length: SKELETON_COUNTS.cards }, (_, i) => (
-    <CharacterCardSkeleton key={i} />
-  ))
+  const characterSkeletons = Array.from(
+    { length: SKELETON_COUNTS.cards },
+    (_, i) => <CharacterCardSkeleton key={i} />,
+  )
 
-  const settingSkeletons = Array.from({ length: SKELETON_COUNTS.cards }, (_, i) => (
-    <SettingCardSkeleton key={i} />
-  ))
+  const settingSkeletons = Array.from(
+    { length: SKELETON_COUNTS.cards },
+    (_, i) => <SettingCardSkeleton key={i} />,
+  )
 
-  const sceneSkeletons = Array.from({ length: SKELETON_COUNTS.scenes }, (_, i) => (
-    <SceneCardSkeleton key={i} />
-  ))
+  const sceneSkeletons = Array.from(
+    { length: SKELETON_COUNTS.scenes },
+    (_, i) => <SceneCardSkeleton key={i} />,
+  )
 
   return (
     <Tabs defaultValue="characters" className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="characters">Characters ({characters?.length || 0})</TabsTrigger>
-        <TabsTrigger value="settings">Settings ({settings?.length || 0})</TabsTrigger>
+        <TabsTrigger value="characters">
+          Characters ({characters?.length || 0})
+        </TabsTrigger>
+        <TabsTrigger value="settings">
+          Settings ({settings?.length || 0})
+        </TabsTrigger>
         <TabsTrigger value="scenes">Scenes ({scenes?.length || 0})</TabsTrigger>
       </TabsList>
 
@@ -415,7 +440,10 @@ interface CreateStoryboardFormProps {
   isLoading: boolean
 }
 
-function CreateStoryboardForm({ onSubmit, isLoading }: CreateStoryboardFormProps) {
+function CreateStoryboardForm({
+  onSubmit,
+  isLoading,
+}: CreateStoryboardFormProps) {
   const form = useForm<StoryboardForm>({
     resolver: zodResolver(storyboardSchema),
     defaultValues: { content: "", style: "cinematic" },

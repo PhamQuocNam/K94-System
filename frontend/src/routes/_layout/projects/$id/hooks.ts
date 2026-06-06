@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { DefaultService } from "@/client"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { DefaultService } from "@/client"
 
 const SESSION_STORAGE_KEY = (projectId: string) => `storyboard_${projectId}`
 
@@ -9,20 +9,22 @@ export function useStoryboard(projectId: string) {
   const queryClient = useQueryClient()
   const [storyboardId, setStoryboardId] = useState<string | null>(null)
 
-  // Load storyboard ID from sessionStorage on mount
-  useEffect(() => {
-    const storedId = sessionStorage.getItem(SESSION_STORAGE_KEY(projectId))
-    if (storedId) {
-      setStoryboardId(storedId)
-    }
-  }, [projectId])
-
-  const storyboard = useQuery({
-    queryKey: ["storyboard", storyboardId],
-    queryFn: () =>
-      DefaultService.getStoryboard({ storyboardId: storyboardId! }),
-    enabled: !!storyboardId,
+  // Query to get storyboard by project ID from backend
+  const storyboardQuery = useQuery({
+    queryKey: ["storyboardByProject", projectId],
+    queryFn: () => DefaultService.getStoryboardByProjectId({ projectId }),
+    retry: false,
   })
+
+  const storyboard = storyboardQuery.data
+
+  // Update storyboardId when we get the storyboard from backend
+  useEffect(() => {
+    if (storyboard?.id) {
+      setStoryboardId(storyboard.id)
+      sessionStorage.setItem(SESSION_STORAGE_KEY(projectId), storyboard.id)
+    }
+  }, [storyboard, projectId])
 
   const setStoryboardIdWithStorage = (id: string) => {
     setStoryboardId(id)
@@ -31,10 +33,12 @@ export function useStoryboard(projectId: string) {
 
   return {
     storyboardId,
-    storyboard: storyboard.data,
+    storyboard,
     setStoryboardId: setStoryboardIdWithStorage,
     invalidateStoryboard: () =>
-      queryClient.invalidateQueries({ queryKey: ["storyboard", storyboardId] }),
+      queryClient.invalidateQueries({
+        queryKey: ["storyboardByProject", projectId],
+      }),
   }
 }
 
@@ -61,11 +65,11 @@ export function useStoryboardAnalysis(storyboardId: string | null) {
   })
 
   return {
-    characters: characters.data,
+    characters: characters.data ?? null,
     charactersLoading: characters.isLoading,
-    settings: settings.data,
+    settings: settings.data ?? null,
     settingsLoading: settings.isLoading,
-    scenes: scenes.data,
+    scenes: scenes.data ?? null,
     scenesLoading: scenes.isLoading,
     invalidateAll: (queryClient: ReturnType<typeof useQueryClient>) => {
       queryClient.invalidateQueries({ queryKey: ["characters", storyboardId] })

@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
 import { useState } from "react"
-import { DefaultService } from "@/client"
 import type { ProjectPublic } from "@/client"
+import { DefaultService } from "@/client"
 import {
   DeleteProjectDialog,
   EditProjectDialog,
