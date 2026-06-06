@@ -39,7 +39,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 
 const storyboardSchema = z.object({
-  title: z.string().min(1, "Title is required").max(255, "Title too long"),
   content: z.string().min(50, "Content must be at least 50 characters"),
   style: z.string().max(255).optional(),
 })
@@ -350,7 +349,6 @@ function CreateStoryboardForm({
   const form = useForm<StoryboardForm>({
     resolver: zodResolver(storyboardSchema),
     defaultValues: {
-      title: "",
       content: "",
       style: "cinematic",
     },
@@ -367,20 +365,6 @@ function CreateStoryboardForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="My Story" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="style"
