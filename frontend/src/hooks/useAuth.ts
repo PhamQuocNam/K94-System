@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 
 import {
-  type Body_login_access_token_api_v1_login_access_token_post as AccessToken,
+  type Body_login_login_access_token,
   LoginService,
+  type Token,
   type UserPublic,
   type UserRegister,
   UsersService,
@@ -22,13 +23,13 @@ const useAuth = () => {
 
   const { data: user } = useQuery<UserPublic | null, Error>({
     queryKey: ["currentUser"],
-    queryFn: () => UsersService.readUserMeApiV1UsersMeGet(),
+    queryFn: () => UsersService.readUserMe(),
     enabled: isLoggedIn(),
   })
 
   const signUpMutation = useMutation({
     mutationFn: (data: UserRegister) =>
-      UsersService.registerUserApiV1UsersSignupPost({ requestBody: data }),
+      UsersService.registerUser({ requestBody: data }),
     onSuccess: () => {
       navigate({ to: "/login" })
     },
@@ -38,11 +39,11 @@ const useAuth = () => {
     },
   })
 
-  const login = async (data: AccessToken) => {
-    const response = await LoginService.accessTokenApiV1LoginAccessTokenPost({
+  const login = async (data: Body_login_login_access_token) => {
+    const response = await LoginService.loginAccessToken({
       formData: data,
     })
-    localStorage.setItem("access_token", response.access_token)
+    localStorage.setItem("access_token", (response as Token).access_token)
   }
 
   const loginMutation = useMutation({

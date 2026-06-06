@@ -7,7 +7,7 @@ import {
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import type { Body_login_access_token_api_v1_login_access_token_post as AccessToken } from "@/client"
+import type { Body_login_login_access_token } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
 import {
   Form,
@@ -28,7 +28,7 @@ const formSchema = z.object({
     .string()
     .min(1, { message: "Password is required" })
     .min(8, { message: "Password must be at least 8 characters" }),
-}) satisfies z.ZodType<AccessToken>
+}) satisfies z.ZodType<Body_login_login_access_token>
 
 type FormData = z.infer<typeof formSchema>
 
