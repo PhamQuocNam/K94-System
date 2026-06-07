@@ -1,0 +1,54 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "343d57633576498e9d51e67ac2f7a456.QY79pUPWIHVpAffd",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.7",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(sed -i '/from app\\\\.services\\\\.agent_service\\\\.nodes\\\\.graphql\\\\.schema_management import clear_schema_cache, warm_up_schema_cache/d' \"D:/Work/TSR/ecombox-pilot/ecombox-copilot-backend/main.py\")",
+      "Bash(sed -i '/warm_up_schema_cache\\(\\)/d' \"D:/Work/TSR/ecombox-pilot/ecombox-copilot-backend/main.py\")",
+      "mcp__ide__getDiagnostics",
+      "WebSearch",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://127.0.0.1:8000/api/v1/)",
+      "Bash(curl -s http://127.0.0.1:8000/api/v1/openapi.json)",
+      "Bash(ls -la logs/)",
+      "Bash(ls -la .claude/)",
+      "Bash(curl -s http://localhost:8000/api/v1/openapi.json)",
+      "Bash(curl *)",
+      "Bash(kill -15 1445)",
+      "Bash(npx -y hey-api generate-client)",
+      "mcp__plugin_ecc_exa__web_search_exa",
+      "Bash(bun run *)",
+      "Bash(npx -y typescript --noEmit)",
+      "Bash(pkill -f \"vite\")"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "github"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Local FastAPI session started'"
+          }
+        ]
+      }
+    ]
+  },
+  "alwaysThinkingEnabled": true,
+  "// INSTRUCTIONS": "Copy this file to settings.local.json and customize for your local environment",
+  "// NOTE": "This file is gitignored and should contain personal/sensitive configuration"
+}

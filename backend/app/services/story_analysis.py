@@ -8,6 +8,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.runnables import RunnableParallel
 from sqlmodel import Session, select
 
+from app.core.exceptions import BusinessRuleException
 from app.core.logging import logger
 from app.image_generator.image_gen import ImageGenerator
 from app.llm_provider import get_llm
@@ -68,7 +69,7 @@ class StoryAnalysisService:
             result = await extraction_chain.ainvoke({"story": story_content})
         except OutputParserException as e:
             logger.error("LLM output parsing failed", error=str(e), llm_output=str(e.llm_output) if hasattr(e, 'llm_output') else 'N/A')
-            raise ValueError(
+            raise BusinessRuleException(
                 f"Failed to parse LLM response. The story content may be too short or unclear. "
                 f"Please provide a complete story with dialogue and descriptions. "
                 f"LLM said: {str(e)}"

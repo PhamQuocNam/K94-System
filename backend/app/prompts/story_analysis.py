@@ -85,9 +85,9 @@ SETTING RULES
 FIELD RULES
 For each setting provide:
 - name: location name
-- description: detailed visual description of the environment
+- description: short visual description of the environment.
 - time_of_day: morning, afternoon, evening, night, dawn, dusk, or unknown
-- weather: weather conditions or unknown
+- weather: weather conditions
 - art_style: visual style suitable for image generation
 
 INFERENCE RULES

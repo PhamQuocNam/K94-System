@@ -81,7 +81,9 @@ export function useStoryboardAnalysis(storyboardId: string | null) {
 
 export function getApiErrorMessage(error: unknown): string {
   if (error instanceof Error) {
-    const errorData = (error as any).cause?.response?.data
+    const errorData = (
+      error as { cause?: { response?: { data?: { detail?: string } } } }
+    ).cause?.response?.data
     if (errorData?.detail) {
       return errorData.detail
     }

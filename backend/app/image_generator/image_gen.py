@@ -3,7 +3,7 @@
 import os
 from typing import Literal
 
-import httpx
+import replicate
 from pydantic import BaseModel
 
 from app.core.logging import logger
@@ -30,6 +30,8 @@ class ImageGenResponse(BaseModel):
 class ImageGenerator:
     """Image generation service using Replicate API."""
 
+    MODEL_ID = "prunaai/p-image"
+
     def __init__(self, api_token: str | None = None):
         """Initialize image generator.
 
@@ -40,14 +42,15 @@ class ImageGenerator:
         if not self.api_token:
             raise ValueError("REPLICATE_API_TOKEN environment variable must be set")
 
-        self.client = httpx.AsyncClient(
-            timeout=120.0,
-            headers={"Authorization": f"Bearer {self.api_token}"},
-        )
+        self.client = replicate.Client(api_token=self.api_token)
 
     async def close(self):
-        """Close the HTTP client."""
-        await self.client.aclose()
+        """Close the client connection.
+
+        Note: replicate.Client manages httpx connections internally and
+        cleans them up on garbage collection. This is a no-op for compatibility.
+        """
+        pass
 
     async def generate_character_reference(
         self,
@@ -125,43 +128,33 @@ class ImageGenerator:
         """
         try:
             logger.debug("Creating prediction", aspect_ratio=aspect_ratio)
-            # Create prediction
-            response = await self.client.post(
-                "https://api.replicate.com/v1/predictions",
-                json={
-                    "version": "flux-pro",  # Using Flux Pro model
-                    "input": {
-                        "prompt": prompt,
-                        "aspect_ratio": aspect_ratio,
-                    },
+
+            output = await self.client.async_run(
+                self.MODEL_ID,
+                input={
+                    "prompt": prompt,
+                    "aspect_ratio": aspect_ratio,
                 },
             )
-            response.raise_for_status()
-            prediction = response.json()
 
-            # Poll for result
-            result_url = prediction.get("urls", {}).get("get")
-            if not result_url:
-                logger.error("No result URL in prediction response")
+            if output is None:
+                logger.error("No output from model")
                 return None
 
-            logger.debug("Polling for image generation result")
-            poll_count = 0
-            while True:
-                status_response = await self.client.get(result_url)
-                status_response.raise_for_status()
-                status = status_response.json()
-                poll_count += 1
+            # Output is a FileOutput object
+            if hasattr(output, 'url'):
+                logger.success("Image generation succeeded", url=output.url)
+                return output.url
 
-                if poll_count % 5 == 0:
-                    logger.debug("Still polling", status=status["status"], attempts=poll_count)
+            # If output is a list, get the first item
+            if isinstance(output, list) and len(output) > 0:
+                first_item = output[0]
+                if hasattr(first_item, 'url'):
+                    logger.success("Image generation succeeded", url=first_item.url)
+                    return first_item.url
 
-                if status["status"] == "succeeded":
-                    logger.success("Image generation succeeded", attempts=poll_count)
-                    return status["output"][0] if status["output"] else None
-                elif status["status"] in ("failed", "canceled"):
-                    logger.error("Image generation failed", status=status["status"], attempts=poll_count)
-                    return None
+            logger.error("Unexpected output format", output_type=type(output))
+            return None
 
         except Exception as e:
             logger.error("Image generation exception", error=str(e))

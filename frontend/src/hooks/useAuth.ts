@@ -44,7 +44,8 @@ const useAuth = () => {
     const response = await LoginService.loginAccessToken({
       formData: data,
     })
-    localStorage.setItem("access_token", (response as Token).access_token)
+    const token = response as unknown as { access_token: string }
+    localStorage.setItem("access_token", token.access_token)
   }
 
   const loginMutation = useMutation({

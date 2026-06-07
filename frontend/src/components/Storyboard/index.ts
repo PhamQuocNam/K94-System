@@ -1,4 +1,7 @@
 export { CharacterCard, CharacterCardSkeleton } from "./CharacterCard"
+export { EditCharacterDialog } from "./EditCharacterDialog"
+export { EditSceneDialog } from "./EditSceneDialog"
+export { EditSettingDialog } from "./EditSettingDialog"
 export { EditStoryboardDialog } from "./EditStoryboardDialog"
 export { SceneCard, SceneCardSkeleton } from "./SceneCard"
 export { SettingCard, SettingCardSkeleton } from "./SettingCard"

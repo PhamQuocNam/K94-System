@@ -1,15 +1,17 @@
-import { Film } from "lucide-react"
+import { Film, Pencil } from "lucide-react"
 import type { Scene } from "@/client/types.gen"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface SceneCardProps {
   scene: Scene
   isLoading?: boolean
+  onEdit?: () => void
 }
 
-export function SceneCard({ scene, isLoading }: SceneCardProps) {
+export function SceneCard({ scene, isLoading, onEdit }: SceneCardProps) {
   if (isLoading) {
     return <SceneCardSkeleton />
   }
@@ -22,9 +24,21 @@ export function SceneCard({ scene, isLoading }: SceneCardProps) {
             <Film className="h-4 w-4 text-muted-foreground" />
             {scene.title || `Scene ${scene.sequence_number}`}
           </CardTitle>
-          <Badge variant="outline" className="text-xs">
-            #{scene.sequence_number}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              #{scene.sequence_number}
+            </Badge>
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={onEdit}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3">

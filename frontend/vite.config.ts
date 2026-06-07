@@ -22,7 +22,8 @@ export default defineConfig({
   plugins: [
     tanstackRouter({
       target: "react",
-      autoCodeSplitting: true,
+      autoCodeSplitting: false,
+      routeFileIgnorePattern: "components/.",
     }),
     react(),
     tailwindcss(),

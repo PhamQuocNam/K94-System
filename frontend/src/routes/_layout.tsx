@@ -19,17 +19,11 @@ export const Route = createFileRoute("/_layout")({
   component: Layout,
   beforeLoad: async () => {
     const authenticated = isLoggedIn()
-    console.log("[Auth] beforeLoad check:", {
-      authenticated,
-      token: localStorage.getItem("access_token"),
-    })
     if (!authenticated) {
-      console.log("[Auth] Redirecting to login...")
       throw redirect({
         to: "/login",
       })
     }
-    console.log("[Auth] User authenticated, proceeding...")
   },
 })
 
@@ -38,7 +32,6 @@ function Layout() {
 
   useEffect(() => {
     if (!isLoggedIn()) {
-      console.log("[Auth] Layout useEffect - not logged in, redirecting...")
       navigate({ to: "/login", replace: true })
     }
   }, [navigate])

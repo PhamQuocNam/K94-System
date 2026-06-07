@@ -65,7 +65,9 @@ class ScenePublic(SQLModel):
     setting_id: uuid.UUID | None = None
     title: str | None = None
     sequence_number: int = 0
-    visual_prompt: str | None = None
+    narrative_description: str | None = None
+    visual_description: str | None = None
     scene_type: str | None = None
+    mood: str | None = None
     reference_image_url: str | None = None
     reference_video_url: str | None = None

@@ -1,15 +1,17 @@
-import { MapPin } from "lucide-react"
+import { MapPin, Pencil } from "lucide-react"
 import type { Setting } from "@/client/types.gen"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface SettingCardProps {
   setting: Setting
   isLoading?: boolean
+  onEdit?: () => void
 }
 
-export function SettingCard({ setting, isLoading }: SettingCardProps) {
+export function SettingCard({ setting, isLoading, onEdit }: SettingCardProps) {
   if (isLoading) {
     return <SettingCardSkeleton />
   }
@@ -17,10 +19,22 @@ export function SettingCard({ setting, isLoading }: SettingCardProps) {
   return (
     <Card className="group overflow-hidden transition-all hover:shadow-md">
       <CardHeader className="p-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          {setting.name || "Unnamed Location"}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            {setting.name || "Unnamed Location"}
+          </CardTitle>
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onEdit}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3">
         <div className="flex flex-wrap gap-1.5">

@@ -3,14 +3,14 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
-from sqlmodel import Session, select
+from fastapi import APIRouter, status
+from sqlmodel import Session
 
 from app.api.deps import CurrentUser, SessionDep
-from app.crud import create_project, delete_project, get_project_by_id, get_projects_by_user, update_project
 from app.models import Project
 from app.schemas.auth import Message
 from app.schemas.project import ProjectCreate, ProjectPublic, ProjectsPublic, ProjectUpdate
+from app.services.project import ProjectService
 
 router = APIRouter()
 
@@ -31,8 +31,8 @@ def create_project_endpoint(
     Returns:
         Created project
     """
-    project = create_project(session=session, project_in=project_in, user_id=current_user.id)
-    return project
+    service = ProjectService(session)
+    return service.create_project(project_in=project_in, user_id=current_user.id)
 
 
 @router.get("/projects", response_model=ProjectsPublic)
@@ -53,10 +53,9 @@ def list_projects(
     Returns:
         Dictionary containing projects list and count
     """
-    projects = get_projects_by_user(session=session, user_id=current_user.id)
-    # Apply pagination
-    paginated_projects = projects[offset : offset + limit]
-    return ProjectsPublic(data=paginated_projects, count=len(projects))
+    service = ProjectService(session)
+    projects, total = service.list_projects(user_id=current_user.id, offset=offset, limit=limit)
+    return ProjectsPublic(data=projects, count=total)
 
 
 @router.get("/projects/{project_id}", response_model=ProjectPublic)
@@ -74,22 +73,9 @@ def get_project(
 
     Returns:
         Project if found and owned by user
-
-    Raises:
-        HTTPException 404: If project not found or not owned by user
     """
-    project = get_project_by_id(session=session, project_id=project_id)
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
-    if project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this project",
-        )
-    return project
+    service = ProjectService(session)
+    return service.get_project(project_id=project_id, user_id=current_user.id)
 
 
 @router.patch("/projects/{project_id}", response_model=ProjectPublic)
@@ -109,22 +95,9 @@ def update_project_endpoint(
 
     Returns:
         Updated project
-
-    Raises:
-        HTTPException 404: If project not found or not owned by user
     """
-    project = get_project_by_id(session=session, project_id=project_id)
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
-    if project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to modify this project",
-        )
-    return update_project(session=session, db_project=project, project_in=project_in)
+    service = ProjectService(session)
+    return service.update_project(project_id=project_id, user_id=current_user.id, project_in=project_in)
 
 
 @router.delete("/projects/{project_id}")
@@ -142,20 +115,7 @@ def delete_project_endpoint(
 
     Returns:
         Success message
-
-    Raises:
-        HTTPException 404: If project not found or not owned by user
     """
-    project = get_project_by_id(session=session, project_id=project_id)
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
-    if project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this project",
-        )
-    delete_project(session=session, project_id=project_id)
+    service = ProjectService(session)
+    service.delete_project(project_id=project_id, user_id=current_user.id)
     return Message(message="Project deleted successfully")

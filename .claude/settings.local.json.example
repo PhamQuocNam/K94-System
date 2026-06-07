@@ -1,0 +1,34 @@
+{
+  "// INSTRUCTIONS": "Copy this file to settings.local.json and customize for your local environment",
+  "// NOTE": "This file is gitignored and should contain personal/sensitive configuration",
+
+  "env": {
+    "GITHUB_TOKEN": "your-github-token-here",
+    "DATABASE_URL": "postgresql+asyncpg://user:password@localhost:5432/dbname",
+    "SECRET_KEY": "your-local-secret-key-min-32-chars",
+    "DEBUG": "true",
+    "PYTHONPATH": "."
+  },
+
+  "permissions": {
+    "allow": [
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)"
+    ]
+  },
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Local FastAPI session started'",
+            "description": "Personal session startup hook"
+          }
+        ]
+      }
+    ]
+  }
+}
