@@ -3,30 +3,15 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, status
 from sqlmodel import Session, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import Character, Scene, Setting, StoryBoard
-from app.services.story_analysis import StoryAnalysisService
+from app.schemas.storyboard import StoryBoardCreate, StoryBoardUpdate
+from app.services.storyboard import StoryboardService
 
 router = APIRouter()
-
-
-class StoryBoardCreate(BaseModel):
-    """Request model for creating a storyboard."""
-
-    project_id: uuid.UUID
-    content: str
-    style: str | None = "cinematic"
-
-
-class StoryBoardUpdate(BaseModel):
-    """Request model for updating a storyboard."""
-
-    content: str | None = None
-    style: str | None = None
 
 
 @router.get("/storyboards/by-project/{project_id}")
@@ -45,21 +30,13 @@ def get_storyboard_by_project_id(
     Returns:
         Storyboard if exists, null otherwise
     """
-    from app.models import Project
+    from app.crud.storyboard import get_storyboard_by_project
+    from app.crud.helpers import get_owned_project
 
     # Verify project belongs to user
-    project = session.get(Project, project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
+    get_owned_project(session, project_id, current_user.id)
 
-    storyboard = session.exec(
-        select(StoryBoard).where(StoryBoard.project_id == project_id)
-    ).first()
-
-    return storyboard
+    return get_storyboard_by_project(session, project_id)
 
 
 @router.post("/storyboards")
@@ -78,36 +55,12 @@ def create_storyboard(
     Returns:
         Created storyboard
     """
-    from app.models import Project
-
-    # Verify project belongs to user
-    project = session.get(Project, storyboard_in.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
-        )
-
-    # Check if storyboard already exists for this project
-    existing = session.exec(
-        select(StoryBoard).where(StoryBoard.project_id == storyboard_in.project_id)
-    ).first()
-    
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Storyboard already exists for this project",
-        )
-
-    storyboard = StoryBoard(
+    service = StoryboardService(session)
+    return service.create_storyboard(
         project_id=storyboard_in.project_id,
-        content=storyboard_in.content,
-        style=storyboard_in.style,
+        user_id=current_user.id,
+        storyboard_in=storyboard_in,
     )
-    session.add(storyboard)
-    session.commit()
-    session.refresh(storyboard)
-    return storyboard
 
 
 @router.get("/storyboards/{storyboard_id}")
@@ -126,24 +79,8 @@ def get_storyboard(
     Returns:
         Storyboard with related data
     """
-    storyboard = session.get(StoryBoard, storyboard_id)
-    if not storyboard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storyboard not found",
-        )
-
-    # Verify ownership through project
-    from app.models import Project
-
-    project = session.get(Project, storyboard.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access this storyboard",
-        )
-
-    return storyboard
+    service = StoryboardService(session)
+    return service.get_storyboard(storyboard_id=storyboard_id, user_id=current_user.id)
 
 
 @router.put("/storyboards/{storyboard_id}")
@@ -164,33 +101,12 @@ def update_storyboard(
     Returns:
         Updated storyboard
     """
-    storyboard = session.get(StoryBoard, storyboard_id)
-    if not storyboard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storyboard not found",
-        )
-
-    # Verify ownership through project
-    from app.models import Project
-
-    project = session.get(Project, storyboard.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this storyboard",
-        )
-
-    # Update only provided fields
-    if storyboard_in.content is not None:
-        storyboard.content = storyboard_in.content
-    if storyboard_in.style is not None:
-        storyboard.style = storyboard_in.style
-
-    session.add(storyboard)
-    session.commit()
-    session.refresh(storyboard)
-    return storyboard
+    service = StoryboardService(session)
+    return service.update_storyboard(
+        storyboard_id=storyboard_id,
+        user_id=current_user.id,
+        storyboard_in=storyboard_in,
+    )
 
 
 @router.get("/storyboards/{storyboard_id}/characters")
@@ -209,22 +125,10 @@ def get_storyboard_characters(
     Returns:
         List of characters
     """
-    storyboard = session.get(StoryBoard, storyboard_id)
-    if not storyboard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storyboard not found",
-        )
+    from app.crud.helpers import get_owned_storyboard
 
     # Verify ownership
-    from app.models import Project
-
-    project = session.get(Project, storyboard.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized",
-        )
+    get_owned_storyboard(session, storyboard_id, current_user.id)
 
     characters = session.exec(
         select(Character).where(Character.storyboard_id == storyboard_id)
@@ -248,22 +152,10 @@ def get_storyboard_settings(
     Returns:
         List of settings
     """
-    storyboard = session.get(StoryBoard, storyboard_id)
-    if not storyboard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storyboard not found",
-        )
+    from app.crud.helpers import get_owned_storyboard
 
     # Verify ownership
-    from app.models import Project
-
-    project = session.get(Project, storyboard.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized",
-        )
+    get_owned_storyboard(session, storyboard_id, current_user.id)
 
     settings = session.exec(
         select(Setting).where(Setting.storyboard_id == storyboard_id)
@@ -287,22 +179,10 @@ def get_storyboard_scenes(
     Returns:
         List of scenes ordered by sequence number
     """
-    storyboard = session.get(StoryBoard, storyboard_id)
-    if not storyboard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storyboard not found",
-        )
+    from app.crud.helpers import get_owned_storyboard
 
     # Verify ownership
-    from app.models import Project
-
-    project = session.get(Project, storyboard.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized",
-        )
+    get_owned_storyboard(session, storyboard_id, current_user.id)
 
     scenes = session.exec(
         select(Scene)
@@ -310,6 +190,310 @@ def get_storyboard_scenes(
         .order_by(Scene.sequence_number)
     ).all()
     return scenes
+
+
+@router.put("/characters/{character_id}")
+def update_character(
+    session: SessionDep,
+    current_user: CurrentUser,
+    character_id: uuid.UUID,
+    character_in: dict,
+) -> Character:
+    """Update a character.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        character_id: Character UUID
+        character_in: Update data
+
+    Returns:
+        Updated character
+    """
+    from app.crud.character import update_character
+    from app.crud.helpers import get_owned_storyboard
+
+    character = session.get(Character, character_id)
+    if not character:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Character not found"
+        )
+
+    get_owned_storyboard(session, character.storyboard_id, current_user.id)
+
+    from app.schemas.character import CharacterUpdate
+
+    update_data = CharacterUpdate(**character_in)
+    return update_character(
+        session=session,
+        db_character=character,
+        character_in=update_data,
+    )
+
+
+@router.put("/settings/{setting_id}")
+def update_setting(
+    session: SessionDep,
+    current_user: CurrentUser,
+    setting_id: uuid.UUID,
+    setting_in: dict,
+) -> Setting:
+    """Update a setting.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        setting_id: Setting UUID
+        setting_in: Update data
+
+    Returns:
+        Updated setting
+    """
+    from app.crud.helpers import get_owned_storyboard
+    from app.crud.setting import update_setting
+
+    setting = session.get(Setting, setting_id)
+    if not setting:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Setting not found"
+        )
+
+    get_owned_storyboard(session, setting.storyboard_id, current_user.id)
+
+    from app.schemas.setting import SettingUpdate
+
+    update_data = SettingUpdate(**setting_in)
+    return update_setting(
+        session=session,
+        db_setting=setting,
+        setting_in=update_data,
+    )
+
+
+@router.put("/scenes/{scene_id}")
+def update_scene(
+    session: SessionDep,
+    current_user: CurrentUser,
+    scene_id: uuid.UUID,
+    scene_in: dict,
+) -> Scene:
+    """Update a scene.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        scene_id: Scene UUID
+        scene_in: Update data
+
+    Returns:
+        Updated scene
+    """
+    from app.crud.helpers import get_owned_storyboard
+    from app.crud.scene import update_scene
+
+    scene = session.get(Scene, scene_id)
+    if not scene:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Scene not found"
+        )
+
+    get_owned_storyboard(session, scene.storyboard_id, current_user.id)
+
+    from app.schemas.scene import SceneUpdate
+
+    update_data = SceneUpdate(**scene_in)
+    return update_scene(
+        session=session,
+        db_scene=scene,
+        scene_in=update_data,
+    )
+
+
+@router.post("/characters/{character_id}/regenerate-image")
+async def regenerate_character_image(
+    session: SessionDep,
+    current_user: CurrentUser,
+    character_id: uuid.UUID,
+    style: str = "cinematic",
+) -> dict[str, str | None]:
+    """Regenerate a character's reference image.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        character_id: Character UUID
+        style: Art style for image generation
+
+    Returns:
+        Dictionary with new image URL
+    """
+    from app.core.storage import storage
+    from app.crud.character import get_character_by_id
+    from app.crud.helpers import get_owned_storyboard
+    from app.image_generator.image_gen import ImageGenerator
+    from app.schemas.character import CharacterUpdate
+
+    character = get_character_by_id(session=session, character_id=character_id)
+    if not character:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Character not found"
+        )
+
+    get_owned_storyboard(session, character.storyboard_id, current_user.id)
+
+    image_gen = ImageGenerator()
+    try:
+        description = f"{character.body_build or ''}, {character.face or ''}, {character.hair or ''}, {character.clothes or ''}"
+        temp_url = await image_gen.generate_character_reference(
+            character_name=character.name or "Character",
+            description=description,
+            style=style,
+        )
+
+        if temp_url:
+            # Download and save locally to avoid URL expiration
+            image_url = await storage.download_and_save(temp_url, "generated")
+            update_data = CharacterUpdate(reference_image_url=image_url)
+            update_character(
+                session=session,
+                db_character=character,
+                character_in=update_data,
+            )
+            session.commit()
+        else:
+            image_url = None
+
+        return {"image_url": image_url}
+    finally:
+        await image_gen.close()
+
+
+@router.post("/settings/{setting_id}/regenerate-image")
+async def regenerate_setting_image(
+    session: SessionDep,
+    current_user: CurrentUser,
+    setting_id: uuid.UUID,
+    style: str = "cinematic",
+) -> dict[str, str | None]:
+    """Regenerate a setting's reference image.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        setting_id: Setting UUID
+        style: Art style for image generation
+
+    Returns:
+        Dictionary with new image URL
+    """
+    from app.core.storage import storage
+    from app.crud.helpers import get_owned_storyboard
+    from app.crud.setting import get_setting_by_id
+    from app.image_generator.image_gen import ImageGenerator
+    from app.schemas.setting import SettingUpdate
+
+    setting = get_setting_by_id(session=session, setting_id=setting_id)
+    if not setting:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Setting not found"
+        )
+
+    get_owned_storyboard(session, setting.storyboard_id, current_user.id)
+
+    image_gen = ImageGenerator()
+    try:
+        temp_url = await image_gen.generate_setting_reference(
+            setting_name=setting.name or "Setting",
+            description=setting.description or "",
+            style=style,
+        )
+
+        if temp_url:
+            # Download and save locally to avoid URL expiration
+            image_url = await storage.download_and_save(temp_url, "generated")
+            update_data = SettingUpdate(reference_image_url=image_url)
+            update_setting(
+                session=session,
+                db_setting=setting,
+                setting_in=update_data,
+            )
+            session.commit()
+        else:
+            image_url = None
+
+        return {"image_url": image_url}
+    finally:
+        await image_gen.close()
+
+
+@router.post("/scenes/{scene_id}/regenerate-image")
+async def regenerate_scene_image(
+    session: SessionDep,
+    current_user: CurrentUser,
+    scene_id: uuid.UUID,
+    style: str = "cinematic",
+) -> dict[str, str | None]:
+    """Regenerate a scene's reference image.
+
+    Args:
+        session: Database session
+        current_user: Authenticated user
+        scene_id: Scene UUID
+        style: Art style for image generation
+
+    Returns:
+        Dictionary with new image URL
+    """
+    from app.core.storage import storage
+    from app.crud.helpers import get_owned_storyboard
+    from app.crud.scene import get_scene_by_id
+    from app.image_generator.image_gen import ImageGenerator
+    from app.schemas.scene import SceneUpdate
+
+    scene = get_scene_by_id(session=session, scene_id=scene_id)
+    if not scene:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Scene not found"
+        )
+
+    get_owned_storyboard(session, scene.storyboard_id, current_user.id)
+
+    image_gen = ImageGenerator()
+    try:
+        visual_prompt = scene.visual_description or scene.narrative_description or ""
+        temp_url = await image_gen.generate_scene_reference(
+            visual_prompt=visual_prompt,
+            style=style,
+        )
+
+        if temp_url:
+            # Download and save locally to avoid URL expiration
+            image_url = await storage.download_and_save(temp_url, "generated")
+            update_data = SceneUpdate(reference_image_url=image_url)
+            update_scene(
+                session=session,
+                db_scene=scene,
+                scene_in=update_data,
+            )
+            session.commit()
+        else:
+            image_url = None
+
+        return {"image_url": image_url}
+    finally:
+        await image_gen.close()
 
 
 @router.post("/storyboards/{storyboard_id}/analyze")
@@ -332,68 +516,10 @@ async def analyze_story(
     Returns:
         Analysis results with counts
     """
-    generate_images=False
-    storyboard = session.get(StoryBoard, storyboard_id)
-    if not storyboard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Storyboard not found",
-        )
-
-    # Verify ownership
-    from app.models import Project
-
-    project = session.get(Project, storyboard.project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized",
-        )
-
-    if not storyboard.content or not storyboard.content.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Storyboard content is empty",
-        )
-
-    # Validate minimum content length (at least 50 characters to avoid just titles)
-    if len(storyboard.content.strip()) < 50:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Story content is too short. Please provide a full story (at least 50 characters).",
-        )
-
-    # Delete existing analysis data before re-analyzing
-    # Delete characters
-    existing_characters = session.exec(
-        select(Character).where(Character.storyboard_id == storyboard_id)
-    ).all()
-    for character in existing_characters:
-        session.delete(character)
-
-    # Delete settings
-    existing_settings = session.exec(
-        select(Setting).where(Setting.storyboard_id == storyboard_id)
-    ).all()
-    for setting in existing_settings:
-        session.delete(setting)
-
-    # Delete scenes
-    existing_scenes = session.exec(
-        select(Scene).where(Scene.storyboard_id == storyboard_id)
-    ).all()
-    for scene in existing_scenes:
-        session.delete(scene)
-
-    session.commit()
-
-    # Run story analysis
-    service = StoryAnalysisService(session)
-    result = await service.analyze_story(
+    service = StoryboardService(session)
+    return await service.analyze_story(
         storyboard_id=storyboard_id,
-        story_content=storyboard.content,
+        user_id=current_user.id,
         style=style,
         generate_images=generate_images,
     )
-
-    return result

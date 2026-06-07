@@ -1,10 +1,14 @@
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
+from app.api.error_handlers import register_exception_handlers
 from app.api.main import api_router
 from app.core.config import settings
 from app.core.logging import logger, setup_logging
@@ -34,6 +38,9 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
 )
 
+# Register exception handlers
+register_exception_handlers(app)
+
 # Set all CORS enabled origins
 if settings.all_cors_origins:
     app.add_middleware(
@@ -45,3 +52,8 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Mount static files for uploaded/generated images
+static_dir = Path(__file__).parent.parent / "static"
+static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
