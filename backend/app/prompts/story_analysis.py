@@ -89,6 +89,8 @@ For each setting provide:
 - time_of_day: morning, afternoon, evening, night, dawn, dusk, or unknown
 - weather: weather conditions
 - art_style: visual style suitable for image generation
+- scene_start: index of the first scene where this setting appears
+- scene_end: index of the last consecutive scene where this setting remains the primary setting
 
 INFERENCE RULES
 If a field is explicitly described in the story:
@@ -121,6 +123,8 @@ Example:
         "time_of_day": "evening",
         "weather": "foggy",
         "art_style": "fantasy cinematic",
+        "scene_start": 1,
+        "scene_end": 5
     }}
 ]
 """

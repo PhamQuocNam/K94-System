@@ -185,9 +185,14 @@ class ImageGenerator:
         }
 
         style_desc = style_map.get(style, style_map["cinematic"])
-        return f"""Character reference sheet for {name}.
+        return f"""Character {name}.
 {description}
-Full body shot, front view.
+Requirements:
+- Full body character
+- Standing pose
+- Front view
+- Entire character visible from head to toe
+- Focus on character appearance
 {style_desc}, high quality, detailed character design."""
 
     def _build_setting_prompt(

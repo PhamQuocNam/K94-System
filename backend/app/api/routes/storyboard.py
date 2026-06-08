@@ -334,7 +334,7 @@ async def regenerate_character_image(
         Dictionary with new image URL
     """
     from app.core.storage import storage
-    from app.crud.character import get_character_by_id
+    from app.crud.character import get_character_by_id, update_character
     from app.crud.helpers import get_owned_storyboard
     from app.image_generator.image_gen import ImageGenerator
     from app.schemas.character import CharacterUpdate
@@ -351,7 +351,16 @@ async def regenerate_character_image(
 
     image_gen = ImageGenerator()
     try:
-        description = f"{character.body_build or ''}, {character.face or ''}, {character.hair or ''}, {character.clothes or ''}"
+        description = f"""
+Character profile:
+- Age: {character.age}
+- Gender: {character.gender}
+- Nationality/Ethnicity: {character.nationality}
+- Body build: {character.body_build}
+- Facial features: {character.face}
+- Hair: {character.hair}
+- Clothing: {character.clothes}
+""".strip()
         temp_url = await image_gen.generate_character_reference(
             character_name=character.name or "Character",
             description=description,

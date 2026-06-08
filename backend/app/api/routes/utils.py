@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic.networks import EmailStr
 
-from app.api.deps import CurrentUser, get_current_active_superuser, get_current_user
+from app.api.deps import CurrentUser, get_current_active_superuser
 from app.core.storage import storage
 from app.schemas.auth import Message
 from app.utils import generate_test_email, send_email
@@ -34,8 +34,8 @@ async def health_check() -> bool:
 
 @router.post("/upload-image/")
 async def upload_image(
+    current_user: CurrentUser,
     file: UploadFile = File(...),
-    current_user: CurrentUser = Depends(get_current_user),
 ) -> dict[str, str]:
     """Upload an image file to local storage.
 

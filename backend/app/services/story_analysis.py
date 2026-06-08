@@ -22,6 +22,7 @@ from app.models import (
 from app.prompts.story_analysis import (
     CHARACTER_EXTRACTION_PROMPT,
     SCENE_EXTRACTION_PROMPT,
+    SETTING_EXTRACTION_PROMPT
 )
 
 
@@ -66,7 +67,7 @@ class StoryAnalysisService:
                 scenes=SCENE_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
             )
 
-            result = await extraction_chain.ainvoke({"story": story_content})
+            extraction_result = await extraction_chain.ainvoke({"story": story_content})
         except OutputParserException as e:
             logger.error("LLM output parsing failed", error=str(e), llm_output=str(e.llm_output) if hasattr(e, 'llm_output') else 'N/A')
             raise BusinessRuleException(
@@ -74,21 +75,21 @@ class StoryAnalysisService:
                 f"Please provide a complete story with dialogue and descriptions. "
                 f"LLM said: {str(e)}"
             ) from e
-        logger.debug("LLM extraction completed", characters=len(result.get("characters", [])), scenes=len(result.get("scenes", [])))
+        logger.debug("LLM extraction completed", characters=len(extraction_result.get("characters", [])), scenes=len(extraction_result.get("scenes", [])))
 
-        # Step 2: Save scenes first (needed for settings)
-        scene_count = await self._save_scenes(
-            storyboard_id, result.get("scenes", []), style
+        # Step 2: Save characters first (needed for scene-character linking)
+        character_count = await self._save_characters(
+            storyboard_id, extraction_result.get("characters", []), style, generate_images
         )
 
-        # Step 3: Save characters
-        character_count = await self._save_characters(
-            storyboard_id, result.get("characters", []), style, generate_images
+        # Step 3: Save scenes (links characters to scenes)
+        scene_count = await self._save_scenes(
+            storyboard_id, extraction_result.get("scenes", []), style
         )
 
         # Step 4: Create settings based on scenes (consecutive scenes with same setting)
         setting_count = await self._create_settings_from_scenes(
-            storyboard_id, result.get("scenes", []), style, generate_images
+            storyboard_id, extraction_result.get("scenes", []), style, generate_images
         )
 
         result = {
@@ -138,7 +139,17 @@ class StoryAnalysisService:
 
             # Generate reference image if requested
             if generate_images and self.image_generator:
-                description = f"{char_data.get('body_build', '')}, {char_data.get('face', '')}, {char_data.get('hair', '')}, {char_data.get('clothes', '')}"
+                description = f"""
+Character profile:
+- Age: {character.age}
+- Gender: {character.gender}
+- Nationality/Ethnicity: {character.nationality}
+- Body build: {character.body_build}
+- Facial features: {character.face}
+- Hair: {character.hair}
+- Clothing: {character.clothes}
+""".strip()
+                
                 image_url = await self.image_generator.generate_character_reference(
                     character_name=char_data.get("name", "Unknown"),
                     description=description,
@@ -236,87 +247,25 @@ class StoryAnalysisService:
         if generate_images:
             self.image_generator = ImageGenerator()
 
-        # Group consecutive scenes by setting_name
-        # Only group scenes that appear consecutively with the same setting
-        setting_groups: list[tuple[str, list[dict]]] = []
+        descriptions = [
+            scene.get("narrative_description", "")
+            for scene in scenes_data
+            if scene.get("narrative_description")
+        ]
+        combined_description = [f"{i}. {description}" for i, description in enumerate(descriptions)]
 
-        for i, scene_data in enumerate(scenes_data):
-            setting_name = scene_data.get("setting_name", "Unknown")
-            sequence_num = scene_data.get("sequence_number", 0)
-
-            # Check if we can extend the previous group
-            if setting_groups and setting_groups[-1][0] == setting_name:
-                # Extend the previous group
-                setting_groups[-1][1].append(scene_data)
-            else:
-                # Start a new group
-                setting_groups.append((setting_name, [scene_data]))
+        chain = self.llm | JsonOutputParser()
+        setting_list = await chain.ainvoke(SETTING_EXTRACTION_PROMPT.format(story=combined_description))
 
         count = 0
-        for setting_name, scenes_in_setting in setting_groups:
-            scene_start = scenes_in_setting[0].get("sequence_number", 1)
-            scene_end = scenes_in_setting[-1].get("sequence_number", 1)
+        for setting_data in setting_list:
+            setting_data["storyboard_id"] = storyboard_id
+            setting = Setting(**setting_data)
 
-            # Create a description for this setting based on all scenes
-            descriptions = []
-            for scene in scenes_in_setting:
-                desc = scene.get("narrative_description", "")
-                if desc:
-                    descriptions.append(desc)
-
-            combined_description = " ".join(descriptions) if descriptions else None
-
-            # Extract time_of_day and weather from first scene in this setting
-            time_of_day = None
-            weather = None
-            for scene in scenes_in_setting:
-                # Try to extract from visual_description
-                visual_desc = scene.get("visual_description", "").lower()
-                if "morning" in visual_desc or "dawn" in visual_desc:
-                    time_of_day = "morning"
-                elif "afternoon" in visual_desc:
-                    time_of_day = "afternoon"
-                elif "evening" in visual_desc or "sunset" in visual_desc:
-                    time_of_day = "evening"
-                elif "night" in visual_desc:
-                    time_of_day = "night"
-
-                if time_of_day:
-                    break
-
-            # Extract weather
-            for scene in scenes_in_setting:
-                visual_desc = scene.get("visual_description", "").lower()
-                if "sunny" in visual_desc:
-                    weather = "sunny"
-                elif "cloudy" in visual_desc:
-                    weather = "cloudy"
-                elif "rain" in visual_desc or "raining" in visual_desc:
-                    weather = "rainy"
-                elif "storm" in visual_desc:
-                    weather = "stormy"
-                elif "fog" in visual_desc or "mist" in visual_desc:
-                    weather = "foggy"
-
-                if weather:
-                    break
-
-            setting = Setting(
-                storyboard_id=storyboard_id,
-                name=setting_name,
-                description=combined_description,
-                time_of_day=time_of_day,
-                weather=weather,
-                art_style=style,
-                scene_start=scene_start,
-                scene_end=scene_end,
-            )
-
-            # Generate reference image if requested
             if generate_images and self.image_generator:
                 image_url = await self.image_generator.generate_setting_reference(
-                    setting_name=setting_name,
-                    description=combined_description or f"{setting_name} setting",
+                    setting_name=setting.name,
+                    description=setting.description,
                     style=style,
                 )
                 if image_url:
