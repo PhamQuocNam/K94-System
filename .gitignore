@@ -30,3 +30,6 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# Static files (generated uploads)
+backend/static/
