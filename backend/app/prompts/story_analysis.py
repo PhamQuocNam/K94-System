@@ -5,7 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 # Character extraction prompt
 CHARACTER_EXTRACTION_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-You are an expert story analyzer. Your task is to extract all characters from the given story.
+You are an expert story analyzer. 
+You are given a story and your task is to analyze and extract all characters from the given story.
 
 For each character, provide:
 - name: Character's name
@@ -24,9 +25,13 @@ Rules:
 4. For non-human characters:
 - Adapt fields naturally.
 - Use species traits when applicable.
+- Do not invent human-like features unless explicitly stated in the story.
+- Replace human traits with equivalent species traits.
 - If a field does not logically apply, provide a suitable equivalent description.
 5. Age should be an estimated integer.
 6. Return ONLY a valid JSON array.
+7. Do not merge character appearances when the same character undergoes a significant visual transformation.
+8. If a character changes appearance substantially during the story, create separate character entries for each major visual form.
 
 JSON REQUIREMENTS:
 - Return ONLY valid JSON.
@@ -143,16 +148,17 @@ Extract all settings and return valid JSON.
 # Scene extraction prompt
 SCENE_EXTRACTION_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """
-You are an expert screenplay analyst and storyboard planner.
-
-Your task is to convert a narrative story into a sequence of visual scenes suitable for AI image and video generation.
+You are an expert screenplay analyst and storyboard writer.
+Your task is to analyze and convert the given story into a long detailed sequence of visual scenes. More scenes, more better
+Prefer a larger number of meaningful scenes rather than merging important moments together. Break major events into smaller visual moments, including setup, action, reaction, and consequence whenever appropriate.
 
 SCENE SEGMENTATION RULES:
 1. Keep scenes visually coherent.
 2. Preserve chronological order.
-3. Do not skip important events.
-4. Do not create duplicate scenes.
-5. Every scene should be visually representable.
+3. Multiple shots of the same event are allowed when they provide a different cinematic perspective.
+4. Prefer a larger number of meaningful scenes rather than merging important moments together.
+5. Create additional scenes for important emotional moments when appropriate.
+6. Significant actions may be shown from multiple cinematic perspectives.
 
 For each scene return:
 - sequence_number: integer
@@ -173,7 +179,7 @@ Example:
 
 [
   {{
-    "sequence_number": 1,
+    "sequence_number": 30,
     "title": "Entering the Forest",
     "narrative_description": "John arrives at the edge of the forest and hesitates before entering.",
     "visual_description": "A young man standing before a dark misty forest at sunset.",
@@ -184,7 +190,7 @@ Example:
     ("human", """Story to analyze:
 {story}
 
-Break this story into scenes and return as JSON array."""),
+Break this story into multiple scenes and return as JSON array."""),
 ])
 
 # Visual description generation prompt

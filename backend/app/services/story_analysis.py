@@ -24,6 +24,7 @@ from app.prompts.story_analysis import (
     SCENE_EXTRACTION_PROMPT,
     SETTING_EXTRACTION_PROMPT
 )
+from app.core.storage import storage
 
 
 class StoryAnalysisService:
@@ -84,7 +85,7 @@ class StoryAnalysisService:
 
         # Step 3: Save scenes (links characters to scenes)
         scene_count = await self._save_scenes(
-            storyboard_id, extraction_result.get("scenes", []), style
+            storyboard_id, extraction_result.get("scenes", [])
         )
 
         # Step 4: Create settings based on scenes (consecutive scenes with same setting)
@@ -123,23 +124,24 @@ class StoryAnalysisService:
         if generate_images:
             self.image_generator = ImageGenerator()
 
-        count = 0
-        for char_data in characters_data:
-            character = Character(
-                storyboard_id=storyboard_id,
-                name=char_data.get("name"),
-                gender=char_data.get("gender"),
-                age=char_data.get("age"),
-                body_build=char_data.get("body_build"),
-                face=char_data.get("face"),
-                hair=char_data.get("hair"),
-                clothes=char_data.get("clothes"),
-                nationality=char_data.get("nationality"),
-            )
+        try:
+            count = 0
+            for char_data in characters_data:
+                character = Character(
+                    storyboard_id=storyboard_id,
+                    name=char_data.get("name"),
+                    gender=char_data.get("gender"),
+                    age=char_data.get("age"),
+                    body_build=char_data.get("body_build"),
+                    face=char_data.get("face"),
+                    hair=char_data.get("hair"),
+                    clothes=char_data.get("clothes"),
+                    nationality=char_data.get("nationality"),
+                )
 
-            # Generate reference image if requested
-            if generate_images and self.image_generator:
-                description = f"""
+                # Generate reference image if requested
+                if generate_images and self.image_generator:
+                    description = f"""
 Character profile:
 - Age: {character.age}
 - Gender: {character.gender}
@@ -149,23 +151,24 @@ Character profile:
 - Hair: {character.hair}
 - Clothing: {character.clothes}
 """.strip()
-                
-                image_url = await self.image_generator.generate_character_reference(
-                    character_name=char_data.get("name", "Unknown"),
-                    description=description,
-                    style=style,
-                )
-                if image_url:
-                    character.reference_image_url = image_url
 
-            self.session.add(character)
-            count += 1
+                    image_url = await self.image_generator.generate_character_reference(
+                        character_name=char_data.get("name", "Unknown"),
+                        description=description,
+                        style=style,
+                    )
+                    if image_url:
+                        new_image_url = await storage.download_and_save(image_url, "images")
+                        character.reference_image_url = new_image_url
 
-        self.session.commit()
+                self.session.add(character)
+                count += 1
 
-        if self.image_generator:
-            await self.image_generator.close()
-            self.image_generator = None
+            self.session.commit()
+        finally:
+            if self.image_generator:
+                await self.image_generator.close()
+                self.image_generator = None
 
         return count
 
@@ -173,14 +176,12 @@ Character profile:
         self,
         storyboard_id: uuid.UUID,
         scenes_data: list[dict],
-        style: str,
     ) -> int:
         """Save scenes to database.
 
         Args:
             storyboard_id: Storyboard UUID
             scenes_data: List of scene dictionaries from LLM
-            style: Art style for visual descriptions
 
         Returns:
             Number of scenes saved
@@ -192,7 +193,13 @@ Character profile:
             select(Character).where(Character.storyboard_id == storyboard_id)
         ).all()
 
-        char_map = {c.name: c.id for c in characters if c.name}
+        char_map: dict[str, uuid.UUID] = {}
+        for c in characters:
+            if c.name:
+                if c.name in char_map:
+                    logger.warning("Duplicate character name, skipping", name=c.name)
+                else:
+                    char_map[c.name] = c.id
 
         count = 0
         for scene_data in scenes_data:
@@ -247,38 +254,46 @@ Character profile:
         if generate_images:
             self.image_generator = ImageGenerator()
 
-        descriptions = [
-            scene.get("narrative_description", "")
-            for scene in scenes_data
-            if scene.get("narrative_description")
-        ]
-        combined_description = [f"{i}. {description}" for i, description in enumerate(descriptions)]
+        combined_description = "\n".join(
+            f"{i}. {description}"
+            for i, description in enumerate(
+                scene.get("narrative_description", "")
+                for scene in scenes_data
+                if scene.get("narrative_description")
+            )
+        )
 
-        chain = self.llm | JsonOutputParser()
-        setting_list = await chain.ainvoke(SETTING_EXTRACTION_PROMPT.format(story=combined_description))
+        chain = SETTING_EXTRACTION_PROMPT | self.llm | JsonOutputParser()
+        setting_list = await chain.ainvoke({"story": combined_description})
 
-        count = 0
-        for setting_data in setting_list:
-            setting_data["storyboard_id"] = storyboard_id
-            setting = Setting(**setting_data)
+        # Known fields on the Setting model (excluding auto-set ones)
+        _SETTING_FIELDS = {"name", "description", "time_of_day", "weather", "art_style", "scene_start", "scene_end"}
 
-            if generate_images and self.image_generator:
-                image_url = await self.image_generator.generate_setting_reference(
-                    setting_name=setting.name,
-                    description=setting.description,
-                    style=style,
-                )
-                if image_url:
-                    setting.reference_image_url = image_url
+        try:
+            count = 0
+            for setting_data in setting_list:
+                filtered = {k: v for k, v in setting_data.items() if k in _SETTING_FIELDS}
+                filtered["storyboard_id"] = storyboard_id
+                setting = Setting(**filtered)
 
-            self.session.add(setting)
-            count += 1
+                if generate_images and self.image_generator:
+                    image_url = await self.image_generator.generate_setting_reference(
+                        setting_name=setting.name,
+                        description=setting.description,
+                        style=style,
+                    )
+                    if image_url:
+                        new_image_url = await storage.download_and_save(image_url, "images")
+                        setting.reference_image_url = new_image_url
 
-        self.session.commit()
+                self.session.add(setting)
+                count += 1
 
-        if self.image_generator:
-            await self.image_generator.close()
-            self.image_generator = None
+            self.session.commit()
+        finally:
+            if self.image_generator:
+                await self.image_generator.close()
+                self.image_generator = None
 
         return count
 

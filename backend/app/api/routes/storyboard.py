@@ -369,7 +369,7 @@ Character profile:
 
         if temp_url:
             # Download and save locally to avoid URL expiration
-            image_url = await storage.download_and_save(temp_url, "generated")
+            image_url = await storage.download_and_save(temp_url, "images")
             update_data = CharacterUpdate(reference_image_url=image_url)
             update_character(
                 session=session,
@@ -429,7 +429,7 @@ async def regenerate_setting_image(
 
         if temp_url:
             # Download and save locally to avoid URL expiration
-            image_url = await storage.download_and_save(temp_url, "generated")
+            image_url = await storage.download_and_save(temp_url, "images")
             update_data = SettingUpdate(reference_image_url=image_url)
             update_setting(
                 session=session,
