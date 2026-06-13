@@ -2,6 +2,7 @@
 
 import uuid
 from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
 
 from app.models import Scene
 from app.schemas.scene import SceneCreate, SceneUpdate
@@ -39,7 +40,7 @@ def get_scenes_by_storyboard( session: Session, storyboard_id: uuid.UUID) -> lis
 
 
 def get_scene_by_id(session: Session, scene_id: uuid.UUID) -> Scene | None:
-    """Get scene by ID.
+    """Get scene by ID with setting and characters loaded.
 
     Args:
         session: Database session
@@ -48,7 +49,12 @@ def get_scene_by_id(session: Session, scene_id: uuid.UUID) -> Scene | None:
     Returns:
         Scene if found, None otherwise
     """
-    return session.get(Scene, scene_id)
+    statement = (
+        select(Scene)
+        .where(Scene.id == scene_id)
+        .options(selectinload(Scene.setting), selectinload(Scene.characters))
+    )
+    return session.exec(statement).first()
 
 
 def update_scene( session: Session, db_scene: Scene, scene_in: SceneUpdate) -> Scene:

@@ -69,3 +69,42 @@ async def upload_image(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to upload image: {str(e)}"
         )
+
+
+@router.post("/upload-video/")
+async def upload_video(
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+) -> dict[str, str]:
+    """Upload a video file to local storage.
+
+    Args:
+        file: Video file to upload
+        current_user: Authenticated user
+
+    Returns:
+        Dictionary with URL of uploaded file
+    """
+    # Validate file type
+    if not file.content_type or not file.content_type.startswith("video/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only video files are allowed"
+        )
+
+    contents = await file.read()
+
+    if len(contents) > 100 * 1024 * 1024:  # 100MB limit for videos
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds 100MB limit"
+        )
+
+    try:
+        url = storage.save_upload(file.filename or "video.mp4", contents)
+        return {"url": url}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload video: {str(e)}"
+        )

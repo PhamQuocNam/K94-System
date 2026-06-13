@@ -138,7 +138,6 @@ Example:
         "human",
         """
 Story:
-
 {story}
 
 Extract all settings and return valid JSON.
@@ -176,22 +175,71 @@ JSON REQUIREMENTS:
 - No text before or after JSON.
 
 Example:
-
 [
   {{
     "sequence_number": 30,
     "title": "Entering the Forest",
     "narrative_description": "John arrives at the edge of the forest and hesitates before entering.",
     "visual_description": "A young man standing before a dark misty forest at sunset.",
-    "characters_present": ["John"],
+    "characters_present": ["John"]
   }}
 ]
 """),
     ("human", """Story to analyze:
 {story}
 
+Characters:
+{characters}
+
 Break this story into multiple scenes and return as JSON array."""),
 ])
+
+ADD_MISSING_SCENES_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+You are an expert storyboard writer.
+You are given:
+1. A story.
+2. A sequence of storyboard scenes.
+
+Your task is to identify narrative gaps and generate ONLY the missing scenes needed to improve story continuity.
+
+Rules:
+- Do NOT modify existing scenes.
+- Do NOT rewrite existing scenes.
+- Do NOT return existing scenes.
+- Generate newly added scenes.
+- Every generated scene must fit naturally into the story.
+- sequence_number indicates where the scene should be inserted.
+- If no additional scenes are needed, return [].
+
+JSON REQUIREMENTS:
+- Return ONLY valid JSON.
+- Return a JSON array.
+- No markdown.
+- No explanations.
+- No code blocks.
+- No text before or after JSON.
+"""
+        ),
+        (
+            "human",
+            """
+Story:
+{story}
+
+Sequence of scenes:
+{scenes}
+
+Analyze the story and existing scenes.
+Generate ONLY the missing scenes.
+Return valid JSON.
+"""
+        ),
+    ]
+)
 
 # Visual description generation prompt
 VISUAL_DESCRIPTION_PROMPT = ChatPromptTemplate.from_messages([

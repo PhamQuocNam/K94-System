@@ -64,10 +64,38 @@ class ScenePublic(SQLModel):
     storyboard_id: uuid.UUID
     setting_id: uuid.UUID | None = None
     title: str | None = None
-    sequence_number: int = 0
+    sequence_number: float = 0.0
     narrative_description: str | None = None
     visual_description: str | None = None
     scene_type: str | None = None
     mood: str | None = None
     reference_image_url: str | None = None
     reference_video_url: str | None = None
+
+
+class ImageGenerationResponse(SQLModel):
+    """Response model for image generation."""
+    image_url: str | None = None
+    error: str | None = None
+
+
+class VideoGenerationResponse(SQLModel):
+    """Response model for video generation."""
+    video_url: str | None = None
+    error: str | None = None
+
+
+class StoryAnalysisResponse(SQLModel):
+    """Response model for story analysis."""
+    characters_count: int
+    settings_count: int
+    scenes_count: int
+    message: str
+
+
+class BatchGenerationResponse(SQLModel):
+    """Response model for batch generation operations."""
+    total: int
+    success_count: int
+    error_count: int
+    errors: list[dict] = []

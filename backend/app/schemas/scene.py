@@ -7,9 +7,10 @@ from sqlmodel import Field, SQLModel
 class SceneBase(SQLModel):
     """Base scene schema."""
     title: str | None = Field(default=None, max_length=255)
-    sequence_number: int = Field(default=0)
+    sequence_number: float = Field(default=0.0)
     narrative_description: str | None = Field(default=None)
     visual_description: str | None = Field(default=None)
+    visual_prompt: str | None = Field(default=None)
     scene_type: str | None = Field(default=None, max_length=100)
     mood: str | None = Field(default=None, max_length=100)
     reference_image_url: str | None = Field(default=None, max_length=2048)
@@ -25,9 +26,10 @@ class SceneCreate(SceneBase):
 class SceneUpdate(SQLModel):
     """Request model for updating a scene."""
     title: str | None = Field(default=None, max_length=255)
-    sequence_number: int | None = Field(default=None)
+    sequence_number: float | None = Field(default=None)
     narrative_description: str | None = Field(default=None)
     visual_description: str | None = Field(default=None)
+    visual_prompt: str | None = Field(default=None)
     scene_type: str | None = Field(default=None, max_length=100)
     mood: str | None = Field(default=None, max_length=100)
     setting_id: uuid.UUID | None = Field(default=None)
