@@ -1,5 +1,6 @@
 """Image generation service for reference images."""
 
+import base64
 import os
 from typing import Literal
 
@@ -30,19 +31,18 @@ class ImageGenResponse(BaseModel):
 class ImageGenerator:
     """Image generation service using Replicate API."""
 
-    MODEL_ID = "prunaai/p-image"
-
-    def __init__(self, api_token: str | None = None):
+    def __init__(self):
         """Initialize image generator.
 
-        Args:
-            api_token: Replicate API token. If None, reads from REPLICATE_API_TOKEN env var.
         """
-        self.api_token = api_token or os.getenv("REPLICATE_API_TOKEN")
+        self.api_token = os.getenv("REPLICATE_API_TOKEN")
+
         if not self.api_token:
             raise ValueError("REPLICATE_API_TOKEN environment variable must be set")
 
         self.client = replicate.Client(api_token=self.api_token)
+        self.model_type = os.getenv("MODEL_TYPE", "text2image")
+        self.model_id = os.getenv("REPLICATE_MODEL_ID", "prunaai/p-image")
 
     async def close(self):
         """Close the client connection.
@@ -100,42 +100,64 @@ class ImageGenerator:
         self,
         visual_prompt: str,
         style: str = "cinematic",
+        reference_paths: list[str] | None = None
     ) -> str | None:
         """Generate a reference image for a scene.
 
         Args:
             visual_prompt: Detailed visual description prompt
-            style: Art style
+            style: Art style (currently unused, for future enhancement)
+            reference_paths: List of local file paths to use as references
 
         Returns:
             URL of the generated image, or None if generation failed
         """
-        return await self._generate_image(visual_prompt, aspect_ratio="16:9")
+        return await self._generate_image(
+            visual_prompt,
+            aspect_ratio="16:9",
+            reference_paths=reference_paths or []
+        )
 
     async def _generate_image(
         self,
         prompt: str,
         aspect_ratio: str = "1:1",
+        reference_paths: list[str] | None = None
     ) -> str | None:
         """Generate an image using the model.
 
         Args:
             prompt: Text prompt for image generation
             aspect_ratio: Image aspect ratio
+            reference_paths: List of local file paths to use as references (for image2image)
 
         Returns:
             URL of the generated image, or None if generation failed
         """
         try:
-            logger.debug("Creating prediction", aspect_ratio=aspect_ratio)
+            logger.debug("Creating prediction", aspect_ratio=aspect_ratio, model_type=self.model_type)
 
-            output = await self.client.async_run(
-                self.MODEL_ID,
-                input={
-                    "prompt": prompt,
-                    "aspect_ratio": aspect_ratio,
-                },
-            )
+            input_params = {
+                "prompt": prompt,
+                "aspect_ratio": aspect_ratio,
+            }
+
+            # Add reference images if model supports it and references are provided
+            if self.model_type == "image2image" and reference_paths:
+                image_inputs = []
+                for ref_path in reference_paths:
+                    try:
+                        with open(ref_path, "rb") as file:
+                            data = base64.b64encode(file.read()).decode("utf-8")
+                            image_inputs.append(f"data:application/octet-stream;base64,{data}")
+                    except Exception as e:
+                        logger.warning("Failed to read reference image", path=ref_path, error=str(e))
+
+                if image_inputs:
+                    input_params["image_input"] = image_inputs
+                    logger.debug("Added reference images", count=len(image_inputs))
+
+            output = await self.client.async_run(self.model_id, input=input_params)
 
             if output is None:
                 logger.error("No output from model")

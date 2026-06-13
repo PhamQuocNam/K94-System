@@ -1,6 +1,5 @@
 """Storage utility for saving and serving images."""
 
-import os
 import uuid
 from pathlib import Path
 
@@ -71,6 +70,42 @@ class Storage:
                 detail=f"Failed to save image: {str(e)}"
             )
 
+    async def download_to_temp(self, url: str) -> str | None:
+        """Download image from URL to temporary location.
+
+        Args:
+            url: URL of the image to download (or relative path)
+
+        Returns:
+            Absolute path to temporary file, or None if download fails
+        """
+        # Handle relative paths (already local)
+        if url.startswith("/static/"):
+            abs_path = self.get_absolute_path(url)
+            if abs_path.exists():
+                return str(abs_path)
+            logger.warning("Local file not found", path=str(abs_path))
+            return None
+
+        temp_folder = self.base_path / "temp"
+        temp_folder.mkdir(exist_ok=True)
+
+        filename = f"{uuid.uuid4()}.png"
+        file_path = temp_folder / filename
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+
+                file_path.write_bytes(response.content)
+                logger.debug("Temp image downloaded", path=str(file_path))
+                return str(file_path)
+
+        except Exception as e:
+            logger.warning("Failed to download temp image", url=url, error=str(e))
+            return None
+
     def save_upload(self, filename: str, contents: bytes, subfolder: str = "uploaded") -> str:
         """Save uploaded file to local storage.
 
@@ -105,11 +140,33 @@ class Storage:
             Absolute path to file
         """
         # Convert URL path to file system path
-        # '/static/uploads/generated/xxx.png' -> 'static/uploads/generated/xxx.png'
+        # '/static/uploads/generated/xxx.png' -> project_root / 'static/uploads/generated/xxx.png'
         if relative_path.startswith("/"):
             relative_path = relative_path[1:]
 
-        return self.base_path.parent / relative_path
+        # Get project root (parent of static directory)
+        project_root = self.base_path.parent.parent
+        return project_root / relative_path
+
+    def delete_file(self, file_path: str) -> bool:
+        """Delete a file from storage.
+
+        Args:
+            file_path: Absolute or relative path to file
+
+        Returns:
+            True if deleted, False otherwise
+        """
+        try:
+            path = Path(file_path)
+            if path.exists():
+                path.unlink()
+                logger.debug("File deleted", path=str(path))
+                return True
+            return False
+        except Exception as e:
+            logger.warning("Failed to delete file", path=file_path, error=str(e))
+            return False
 
 
 # Global storage instance

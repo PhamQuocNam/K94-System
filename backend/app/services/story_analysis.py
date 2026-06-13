@@ -5,11 +5,12 @@ from typing import Any
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
-from langchain_core.runnables import RunnableParallel
 from sqlmodel import Session, select
 
 from app.core.exceptions import BusinessRuleException
 from app.core.logging import logger
+from app.core.storage import storage
+from app.crud.scene import get_scenes_by_storyboard
 from app.image_generator.image_gen import ImageGenerator
 from app.llm_provider import get_llm
 from app.models import (
@@ -17,14 +18,12 @@ from app.models import (
     Scene,
     SceneCharacterLink,
     Setting,
-    StoryBoard,
 )
 from app.prompts.story_analysis import (
     CHARACTER_EXTRACTION_PROMPT,
     SCENE_EXTRACTION_PROMPT,
-    SETTING_EXTRACTION_PROMPT
+    SETTING_EXTRACTION_PROMPT,
 )
-from app.core.storage import storage
 
 
 class StoryAnalysisService:
@@ -63,12 +62,12 @@ class StoryAnalysisService:
 
         # Step 1: Extract characters and scenes in parallel
         try:
-            extraction_chain = RunnableParallel(
-                characters=CHARACTER_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
-                scenes=SCENE_EXTRACTION_PROMPT | self.llm | JsonOutputParser(),
-            )
+            character_chain = CHARACTER_EXTRACTION_PROMPT | self.llm | JsonOutputParser()
+            scene_chain = SCENE_EXTRACTION_PROMPT | self.llm | JsonOutputParser()
 
-            extraction_result = await extraction_chain.ainvoke({"story": story_content})
+            characters = await character_chain.ainvoke({"story": story_content})
+            character_names = "\n".join([char.get("name", "") for char in characters])
+            scenes = await scene_chain.ainvoke({"story": story_content, "characters": character_names})
         except OutputParserException as e:
             logger.error("LLM output parsing failed", error=str(e), llm_output=str(e.llm_output) if hasattr(e, 'llm_output') else 'N/A')
             raise BusinessRuleException(
@@ -76,21 +75,21 @@ class StoryAnalysisService:
                 f"Please provide a complete story with dialogue and descriptions. "
                 f"LLM said: {str(e)}"
             ) from e
-        logger.debug("LLM extraction completed", characters=len(extraction_result.get("characters", [])), scenes=len(extraction_result.get("scenes", [])))
+        logger.debug("LLM extraction completed", characters=len(characters), scenes=len(scenes))
 
         # Step 2: Save characters first (needed for scene-character linking)
         character_count = await self._save_characters(
-            storyboard_id, extraction_result.get("characters", []), style, generate_images
+            storyboard_id, characters, style, generate_images
         )
 
         # Step 3: Save scenes (links characters to scenes)
         scene_count = await self._save_scenes(
-            storyboard_id, extraction_result.get("scenes", [])
+            storyboard_id, scenes
         )
 
         # Step 4: Create settings based on scenes (consecutive scenes with same setting)
         setting_count = await self._create_settings_from_scenes(
-            storyboard_id, extraction_result.get("scenes", []), style, generate_images
+            storyboard_id, scenes, style, generate_images
         )
 
         result = {
@@ -175,7 +174,7 @@ Character profile:
     async def _save_scenes(
         self,
         storyboard_id: uuid.UUID,
-        scenes_data: list[dict],
+        scenes_data: list[dict]
     ) -> int:
         """Save scenes to database.
 
@@ -255,7 +254,7 @@ Character profile:
             self.image_generator = ImageGenerator()
 
         combined_description = "\n".join(
-            f"{i}. {description}"
+            f"{i + 1}. {description}"
             for i, description in enumerate(
                 scene.get("narrative_description", "")
                 for scene in scenes_data
@@ -271,6 +270,10 @@ Character profile:
 
         try:
             count = 0
+            all_scenes = get_scenes_by_storyboard(self.session, storyboard_id)
+            # Build a map from sequence_number (1-based) to Scene object
+            scene_map = {scene.sequence_number: scene for scene in all_scenes}
+
             for setting_data in setting_list:
                 filtered = {k: v for k, v in setting_data.items() if k in _SETTING_FIELDS}
                 filtered["storyboard_id"] = storyboard_id
@@ -285,6 +288,15 @@ Character profile:
                     if image_url:
                         new_image_url = await storage.download_and_save(image_url, "images")
                         setting.reference_image_url = new_image_url
+
+                # Link scenes to this setting using scene_start and scene_end
+                scene_start = setting_data.get("scene_start")
+                scene_end = setting_data.get("scene_end")
+                if scene_start is not None and scene_end is not None:
+                    for seq_num in range(int(scene_start), int(scene_end) + 1):
+                        scene = scene_map.get(seq_num)
+                        if scene:
+                            scene.setting_id = setting.id
 
                 self.session.add(setting)
                 count += 1
