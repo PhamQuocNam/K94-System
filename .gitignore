@@ -33,3 +33,6 @@ lerna-debug.log*
 
 # Static files (generated uploads)
 backend/static/
+
+# Claude local settings (contains sensitive credentials)
+.claude/settings.local.json
