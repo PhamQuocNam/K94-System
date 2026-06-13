@@ -21,6 +21,7 @@ import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 import { Route as LayoutProjectsIndexRouteImport } from './routes/_layout/projects/index'
 import { Route as LayoutProjectsNewRouteImport } from './routes/_layout/projects/new'
 import { Route as LayoutProjectsIdIndexRouteImport } from './routes/_layout/projects/$id/index'
+import { Route as LayoutProjectsIdVisualGenerationRouteImport } from './routes/_layout/projects/$id/visual-generation'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -81,6 +82,12 @@ const LayoutProjectsIdIndexRoute = LayoutProjectsIdIndexRouteImport.update({
   path: '/projects/$id/',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutProjectsIdVisualGenerationRoute =
+  LayoutProjectsIdVisualGenerationRouteImport.update({
+    id: '/projects/$id/visual-generation',
+    path: '/projects/$id/visual-generation',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof LayoutSettingsRoute
   '/projects/new': typeof LayoutProjectsNewRoute
   '/projects/': typeof LayoutProjectsIndexRoute
+  '/projects/$id/visual-generation': typeof LayoutProjectsIdVisualGenerationRoute
   '/projects/$id/': typeof LayoutProjectsIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
   '/': typeof LayoutIndexRoute
   '/projects/new': typeof LayoutProjectsNewRoute
   '/projects': typeof LayoutProjectsIndexRoute
+  '/projects/$id/visual-generation': typeof LayoutProjectsIdVisualGenerationRoute
   '/projects/$id': typeof LayoutProjectsIdIndexRoute
 }
 export interface FileRoutesById {
@@ -121,6 +130,7 @@ export interface FileRoutesById {
   '/_layout/': typeof LayoutIndexRoute
   '/_layout/projects/new': typeof LayoutProjectsNewRoute
   '/_layout/projects/': typeof LayoutProjectsIndexRoute
+  '/_layout/projects/$id/visual-generation': typeof LayoutProjectsIdVisualGenerationRoute
   '/_layout/projects/$id/': typeof LayoutProjectsIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/projects/new'
     | '/projects/'
+    | '/projects/$id/visual-generation'
     | '/projects/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/projects/new'
     | '/projects'
+    | '/projects/$id/visual-generation'
     | '/projects/$id'
   id:
     | '__root__'
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
     | '/_layout/'
     | '/_layout/projects/new'
     | '/_layout/projects/'
+    | '/_layout/projects/$id/visual-generation'
     | '/_layout/projects/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutProjectsIdIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/projects/$id/visual-generation': {
+      id: '/_layout/projects/$id/visual-generation'
+      path: '/projects/$id/visual-generation'
+      fullPath: '/projects/$id/visual-generation'
+      preLoaderRoute: typeof LayoutProjectsIdVisualGenerationRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -270,6 +290,7 @@ interface LayoutRouteChildren {
   LayoutIndexRoute: typeof LayoutIndexRoute
   LayoutProjectsNewRoute: typeof LayoutProjectsNewRoute
   LayoutProjectsIndexRoute: typeof LayoutProjectsIndexRoute
+  LayoutProjectsIdVisualGenerationRoute: typeof LayoutProjectsIdVisualGenerationRoute
   LayoutProjectsIdIndexRoute: typeof LayoutProjectsIdIndexRoute
 }
 
@@ -280,6 +301,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutIndexRoute: LayoutIndexRoute,
   LayoutProjectsNewRoute: LayoutProjectsNewRoute,
   LayoutProjectsIndexRoute: LayoutProjectsIndexRoute,
+  LayoutProjectsIdVisualGenerationRoute: LayoutProjectsIdVisualGenerationRoute,
   LayoutProjectsIdIndexRoute: LayoutProjectsIdIndexRoute,
 }
 

@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { LoginService } from "@/client"
-import { AuthLayout } from "@/components/Common/AuthLayout"
+import { AuthLayout } from "@/components/layout/AuthLayout"
 import {
   Form,
   FormControl,
@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { LoadingButton } from "@/components/ui/loading-button"
+import { LoadingButton } from "@/components/shared/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"

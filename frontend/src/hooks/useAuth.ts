@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   type Body_login_login_access_token,
   LoginService,
-  type Token,
   type UserPublic,
   type UserRegister,
   UsersService,

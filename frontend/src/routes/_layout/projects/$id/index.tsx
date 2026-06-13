@@ -11,16 +11,17 @@ import type {
   StoryBoard,
   StoryBoardCreate,
 } from "@/client/types.gen"
-import { EditStoryboardDialog } from "@/components/Storyboard"
+import { EditStoryboardDialog } from "@/features/storyboard"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
 import { PageSkeleton } from "./components"
 import {
   CreateStoryboardForm,
   type StoryboardForm,
-} from "./components/CreateStoryboardForm"
-import { ProjectHeader } from "./components/ProjectHeader"
-import { StoryboardContent } from "./components/StoryboardContent"
+} from "@/features/projects/components/CreateStoryboardForm"
+import { ProjectHeader } from "@/features/projects/components/ProjectHeader"
+import { StoryboardContent } from "@/features/projects/components/StoryboardContent"
 import {
   getApiErrorMessage,
   showApiError,
@@ -35,7 +36,13 @@ export const Route = createFileRoute("/_layout/projects/$id/")({
 function ProjectDetailPage() {
   const { id: projectId } = Route.useParams()
   const queryClient = useQueryClient()
-  const { storyboardId, storyboard, setStoryboardId } = useStoryboard(projectId)
+  const {
+    storyboardId,
+    storyboard,
+    setStoryboardId,
+    invalidateStoryboard,
+    storyboardQuery,
+  } = useStoryboard(projectId)
 
   const {
     characters,
@@ -60,7 +67,8 @@ function ProjectDetailPage() {
     onError: (error) => {
       let message = getApiErrorMessage(error)
       if (message.includes("already exists")) {
-        message += ". Please refresh the page to view the existing storyboard."
+        invalidateStoryboard()
+        message += ". Loading existing storyboard..."
       }
       showApiError(error, message)
     },
@@ -94,7 +102,7 @@ function ProjectDetailPage() {
   return (
     <ProjectDetailView
       projectId={projectId}
-      storyboard={storyboard}
+      storyboard={storyboard ?? null}
       characters={characters}
       charactersLoading={charactersLoading}
       settings={settings}
@@ -105,6 +113,7 @@ function ProjectDetailPage() {
       onAnalyze={handleAnalyze}
       isAnalyzing={analyzeMutation.isPending}
       isCreating={createStoryboardMutation.isPending}
+      storyboardLoading={storyboardQuery.isLoading}
     />
   )
 }
@@ -122,6 +131,7 @@ interface ProjectDetailViewProps {
   onAnalyze: () => void
   isAnalyzing: boolean
   isCreating: boolean
+  storyboardLoading: boolean
 }
 
 function ProjectDetailView({
@@ -137,6 +147,7 @@ function ProjectDetailView({
   onAnalyze,
   isAnalyzing,
   isCreating,
+  storyboardLoading,
 }: ProjectDetailViewProps) {
   const { data: project, isLoading: projectLoading } = useQuery({
     queryKey: ["project", projectId],
@@ -147,6 +158,31 @@ function ProjectDetailView({
     useState(false)
 
   if (projectLoading) return <PageSkeleton />
+
+  // Type-based routing: redirect or show appropriate view
+  if (project?.type && project.type !== "storyboard") {
+    return (
+      <div className="space-y-6">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" className="mb-4" asChild>
+            <a href="/projects">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Projects
+            </a>
+          </Button>
+        </div>
+        <Card className="p-12">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <h3 className="text-lg font-medium">Unsupported Project Type</h3>
+            <p className="text-sm text-muted-foreground">
+              The project type "{project.type}" is not yet supported. 
+              Currently, only "storyboard" projects are available.
+            </p>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   const hasAnalysis =
     (characters?.length ?? 0) > 0 ||
@@ -163,7 +199,7 @@ function ProjectDetailView({
           </a>
         </Button>
         <ProjectHeader
-          project={project}
+          project={project ?? null}
           storyboard={storyboard}
           onAnalyze={onAnalyze}
           isAnalyzing={isAnalyzing}
@@ -173,7 +209,7 @@ function ProjectDetailView({
       {!storyboard ? (
         <CreateStoryboardForm
           onSubmit={onCreateStoryboard}
-          isLoading={isCreating}
+          isLoading={isCreating || storyboardLoading}
         />
       ) : (
         <StoryboardContent

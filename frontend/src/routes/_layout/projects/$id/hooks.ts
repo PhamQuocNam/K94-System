@@ -39,6 +39,7 @@ export function useStoryboard(projectId: string) {
       queryClient.invalidateQueries({
         queryKey: ["storyboardByProject", projectId],
       }),
+    storyboardQuery,
   }
 }
 

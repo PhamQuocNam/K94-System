@@ -6,8 +6,8 @@ import {
 } from "@tanstack/react-router"
 import { useEffect } from "react"
 
-import { Footer } from "@/components/Common/Footer"
-import AppSidebar from "@/components/Sidebar/AppSidebar"
+import { Footer } from "@/components/layout/Footer"
+import AppSidebar from "@/components/layout/Sidebar/AppSidebar"
 import {
   SidebarInset,
   SidebarProvider,

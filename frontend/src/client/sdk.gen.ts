@@ -3,7 +3,76 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CreateProjectEndpointData, CreateProjectEndpointResponse, ListProjectsData, ListProjectsResponse, GetProjectData, GetProjectResponse, UpdateProjectEndpointData, UpdateProjectEndpointResponse, DeleteProjectEndpointData, DeleteProjectEndpointResponse, GetStoryboardByProjectIdData, GetStoryboardByProjectIdResponse, CreateStoryboardData, CreateStoryboardResponse, GetStoryboardData, GetStoryboardResponse, UpdateStoryboardData, UpdateStoryboardResponse, GetStoryboardCharactersData, GetStoryboardCharactersResponse, GetStoryboardSettingsData, GetStoryboardSettingsResponse, GetStoryboardScenesData, GetStoryboardScenesResponse, AnalyzeStoryData, AnalyzeStoryResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CharactersUpdateCharacterEndpointData, CharactersUpdateCharacterEndpointResponse, CharactersRegenerateCharacterImageData, CharactersRegenerateCharacterImageResponse, CreateProjectEndpointData, CreateProjectEndpointResponse, ListProjectsData, ListProjectsResponse, GetProjectData, GetProjectResponse, UpdateProjectEndpointData, UpdateProjectEndpointResponse, DeleteProjectEndpointData, DeleteProjectEndpointResponse, GetStoryboardByProjectIdData, GetStoryboardByProjectIdResponse, CreateStoryboardData, CreateStoryboardResponse, GetStoryboardData, GetStoryboardResponse, UpdateStoryboardData, UpdateStoryboardResponse, GetStoryboardCharactersData, GetStoryboardCharactersResponse, GetStoryboardSettingsData, GetStoryboardSettingsResponse, GetStoryboardScenesData, GetStoryboardScenesResponse, AnalyzeStoryData, AnalyzeStoryResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ScenesCreateSceneEndpointData, ScenesCreateSceneEndpointResponse, ScenesUpdateSceneEndpointData, ScenesUpdateSceneEndpointResponse, ScenesRegenerateSceneImageData, ScenesRegenerateSceneImageResponse, ScenesGenerateSceneImageData, ScenesGenerateSceneImageResponse, ScenesGenerateSceneVideoData, ScenesGenerateSceneVideoResponse, ScenesGenerateStoryboardSceneImagesData, ScenesGenerateStoryboardSceneImagesResponse, ScenesGenerateStoryboardSceneVideosData, ScenesGenerateStoryboardSceneVideosResponse, SettingsUpdateSettingEndpointData, SettingsUpdateSettingEndpointResponse, SettingsRegenerateSettingImageData, SettingsRegenerateSettingImageResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse, UtilsUploadImageData, UtilsUploadImageResponse } from './types.gen';
+
+export class CharactersService {
+    /**
+     * Update Character Endpoint
+     * Update a character.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * character_id: Character UUID
+     * character_in: Update data
+     *
+     * Returns:
+     * Updated character
+     * @param data The data for the request.
+     * @param data.characterId
+     * @param data.requestBody
+     * @returns Character Successful Response
+     * @throws ApiError
+     */
+    public static updateCharacterEndpoint(data: CharactersUpdateCharacterEndpointData): CancelablePromise<CharactersUpdateCharacterEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/characters/{character_id}',
+            path: {
+                character_id: data.characterId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Regenerate Character Image
+     * Regenerate a character's reference image.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * character_id: Character UUID
+     * style: Art style for image generation
+     *
+     * Returns:
+     * Image generation response with URL
+     * @param data The data for the request.
+     * @param data.characterId
+     * @param data.style
+     * @returns ImageGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static regenerateCharacterImage(data: CharactersRegenerateCharacterImageData): CancelablePromise<CharactersRegenerateCharacterImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/characters/{character_id}/regenerate-image',
+            path: {
+                character_id: data.characterId
+            },
+            query: {
+                style: data.style
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class DefaultService {
     /**
@@ -77,9 +146,6 @@ export class DefaultService {
      *
      * Returns:
      * Project if found and owned by user
-     *
-     * Raises:
-     * HTTPException 404: If project not found or not owned by user
      * @param data The data for the request.
      * @param data.projectId
      * @returns ProjectPublic Successful Response
@@ -110,9 +176,6 @@ export class DefaultService {
      *
      * Returns:
      * Updated project
-     *
-     * Raises:
-     * HTTPException 404: If project not found or not owned by user
      * @param data The data for the request.
      * @param data.projectId
      * @param data.requestBody
@@ -145,9 +208,6 @@ export class DefaultService {
      *
      * Returns:
      * Success message
-     *
-     * Raises:
-     * HTTPException 404: If project not found or not owned by user
      * @param data The data for the request.
      * @param data.projectId
      * @returns Message Successful Response
@@ -389,7 +449,7 @@ export class DefaultService {
      * @param data.storyboardId
      * @param data.style
      * @param data.generateImages
-     * @returns unknown Successful Response
+     * @returns StoryAnalysisResponse Successful Response
      * @throws ApiError
      */
     public static analyzeStory(data: AnalyzeStoryData): CancelablePromise<AnalyzeStoryResponse> {
@@ -640,6 +700,338 @@ export class PrivateService {
     }
 }
 
+export class ScenesService {
+    /**
+     * Create Scene Endpoint
+     * Create a new scene in a storyboard.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     * req: Scene creation request
+     * llm: LLM instance
+     *
+     * Returns:
+     * Created scene
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @param data.requestBody
+     * @param data.provider
+     * @param data.modelOverride
+     * @returns Scene Successful Response
+     * @throws ApiError
+     */
+    public static createSceneEndpoint(data: ScenesCreateSceneEndpointData): CancelablePromise<ScenesCreateSceneEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/scenes/storyboards/{storyboard_id}/scenes',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            query: {
+                provider: data.provider,
+                model_override: data.modelOverride
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Scene Endpoint
+     * Update a scene.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * scene_id: Scene UUID
+     * scene_in: Update data
+     *
+     * Returns:
+     * Updated scene
+     * @param data The data for the request.
+     * @param data.sceneId
+     * @param data.requestBody
+     * @returns Scene Successful Response
+     * @throws ApiError
+     */
+    public static updateSceneEndpoint(data: ScenesUpdateSceneEndpointData): CancelablePromise<ScenesUpdateSceneEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/scenes/{scene_id}',
+            path: {
+                scene_id: data.sceneId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Regenerate Scene Image
+     * Regenerate a scene's reference image.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * scene_id: Scene UUID
+     * style: Art style for image generation
+     *
+     * Returns:
+     * Image generation response with URL
+     * @param data The data for the request.
+     * @param data.sceneId
+     * @param data.style
+     * @returns ImageGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static regenerateSceneImage(data: ScenesRegenerateSceneImageData): CancelablePromise<ScenesRegenerateSceneImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/scenes/{scene_id}/regenerate-image',
+            path: {
+                scene_id: data.sceneId
+            },
+            query: {
+                style: data.style
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Scene Image
+     * Generate image for a single scene with visual prompt generation (Phase 2).
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * scene_id: Scene UUID
+     * style: Art style (uses storyboard style if not specified)
+     * llm_provider: LLM provider for visual prompt generation
+     *
+     * Returns:
+     * Image generation response with URL
+     * @param data The data for the request.
+     * @param data.sceneId
+     * @param data.style
+     * @param data.llmProvider
+     * @returns ImageGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static generateSceneImage(data: ScenesGenerateSceneImageData): CancelablePromise<ScenesGenerateSceneImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/scenes/{scene_id}/generate-image',
+            path: {
+                scene_id: data.sceneId
+            },
+            query: {
+                style: data.style,
+                llm_provider: data.llmProvider
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Scene Video
+     * Generate video for a single scene (Phase 2).
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * scene_id: Scene UUID
+     * duration: Video duration in seconds
+     *
+     * Returns:
+     * Video generation response with URL
+     * @param data The data for the request.
+     * @param data.sceneId
+     * @param data.duration
+     * @returns VideoGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static generateSceneVideo(data: ScenesGenerateSceneVideoData): CancelablePromise<ScenesGenerateSceneVideoResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/scenes/{scene_id}/generate-video',
+            path: {
+                scene_id: data.sceneId
+            },
+            query: {
+                duration: data.duration
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Storyboard Scene Images
+     * Generate images for all scenes in a storyboard (Phase 2).
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     * start_scene: Starting scene sequence number
+     * end_scene: Ending scene sequence number (None = all scenes)
+     * regenerate: Whether to regenerate existing images
+     * llm_provider: LLM provider to use for visual prompt generation
+     *
+     * Returns:
+     * Batch generation results with counts and errors
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @param data.startScene
+     * @param data.endScene
+     * @param data.regenerate
+     * @param data.llmProvider
+     * @returns BatchGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static generateStoryboardSceneImages(data: ScenesGenerateStoryboardSceneImagesData): CancelablePromise<ScenesGenerateStoryboardSceneImagesResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/scenes/storyboards/{storyboard_id}/generate-scene-images',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            query: {
+                start_scene: data.startScene,
+                end_scene: data.endScene,
+                regenerate: data.regenerate,
+                llm_provider: data.llmProvider
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Storyboard Scene Videos
+     * Generate videos for all scenes in a storyboard (Phase 2).
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * storyboard_id: Storyboard UUID
+     * start_scene: Starting scene sequence number
+     * end_scene: Ending scene sequence number (None = all scenes)
+     * duration: Video duration in seconds
+     *
+     * Returns:
+     * Batch generation results with counts and errors
+     * @param data The data for the request.
+     * @param data.storyboardId
+     * @param data.startScene
+     * @param data.endScene
+     * @param data.duration
+     * @returns BatchGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static generateStoryboardSceneVideos(data: ScenesGenerateStoryboardSceneVideosData): CancelablePromise<ScenesGenerateStoryboardSceneVideosResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/scenes/storyboards/{storyboard_id}/generate-scene-videos',
+            path: {
+                storyboard_id: data.storyboardId
+            },
+            query: {
+                start_scene: data.startScene,
+                end_scene: data.endScene,
+                duration: data.duration
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class SettingsService {
+    /**
+     * Update Setting Endpoint
+     * Update a setting.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * setting_id: Setting UUID
+     * setting_in: Update data
+     *
+     * Returns:
+     * Updated setting
+     * @param data The data for the request.
+     * @param data.settingId
+     * @param data.requestBody
+     * @returns Setting Successful Response
+     * @throws ApiError
+     */
+    public static updateSettingEndpoint(data: SettingsUpdateSettingEndpointData): CancelablePromise<SettingsUpdateSettingEndpointResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/settings/{setting_id}',
+            path: {
+                setting_id: data.settingId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Regenerate Setting Image
+     * Regenerate a setting's reference image.
+     *
+     * Args:
+     * session: Database session
+     * current_user: Authenticated user
+     * setting_id: Setting UUID
+     * style: Art style for image generation
+     *
+     * Returns:
+     * Image generation response with URL
+     * @param data The data for the request.
+     * @param data.settingId
+     * @param data.style
+     * @returns ImageGenerationResponse Successful Response
+     * @throws ApiError
+     */
+    public static regenerateSettingImage(data: SettingsRegenerateSettingImageData): CancelablePromise<SettingsRegenerateSettingImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/settings/{setting_id}/regenerate-image',
+            path: {
+                setting_id: data.settingId
+            },
+            query: {
+                style: data.style
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
 export class UsersService {
     /**
      * Read Users
@@ -868,6 +1260,33 @@ export class UtilsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/utils/health-check/'
+        });
+    }
+    
+    /**
+     * Upload Image
+     * Upload an image file to local storage.
+     *
+     * Args:
+     * file: Image file to upload
+     * current_user: Authenticated user
+     *
+     * Returns:
+     * Dictionary with URL of uploaded file
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns string Successful Response
+     * @throws ApiError
+     */
+    public static uploadImage(data: UtilsUploadImageData): CancelablePromise<UtilsUploadImageResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/utils/upload-image/',
+            formData: data.formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
 }

@@ -4,10 +4,11 @@ import { Search } from "lucide-react"
 import { Suspense } from "react"
 
 import { ItemsService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
-import AddItem from "@/components/Items/AddItem"
-import { columns } from "@/components/Items/columns"
-import PendingItems from "@/components/Pending/PendingItems"
+import { DataTable } from "@/components/shared/DataTable"
+import {
+  AddItem,
+  columns,
+} from "@/features/items"
 
 function getItemsQueryOptions() {
   return {
@@ -47,7 +48,7 @@ function ItemsTableContent() {
 
 function ItemsTable() {
   return (
-    <Suspense fallback={<PendingItems />}>
+    <Suspense fallback={<div>Loading...</div>}>
       <ItemsTableContent />
     </Suspense>
   )

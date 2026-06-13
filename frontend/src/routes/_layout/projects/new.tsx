@@ -23,16 +23,20 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { LoadingButton } from "@/components/ui/loading-button"
+import { LoadingButton } from "@/components/shared/loading-button"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const projectSchema = z.object({
   title: z.string().min(1, "Title is required").max(255, "Title too long"),
-  description: z
-    .string()
-    .max(1000, "Description too long")
-    .optional()
-    .or(z.literal("")),
+  type: z.enum(["storyboard"]),
+  description: z.string().max(1000, "Description too long").optional(),
 })
 
 type ProjectForm = z.infer<typeof projectSchema>
@@ -51,6 +55,7 @@ function NewProjectPage() {
     resolver: zodResolver(projectSchema),
     defaultValues: {
       title: "",
+      type: "storyboard",
       description: "",
     },
   })
@@ -109,6 +114,30 @@ function NewProjectPage() {
                     <FormControl>
                       <Input placeholder="My Awesome Story" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="storyboard">Storyboard</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

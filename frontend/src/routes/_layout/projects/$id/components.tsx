@@ -60,7 +60,7 @@ export function TabContent({
 }
 
 interface EntityListProps {
-  items: Array<{ id: string }>
+  items: Array<{ id?: string }>
   renderCard: (item: any) => React.ReactNode
   skeleton: React.ReactNode
   isLoading: boolean

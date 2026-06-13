@@ -40,25 +40,16 @@ export type OpenAPIConfig = {
 	};
 };
 
-const API_BASE = typeof import.meta.env !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
-	? import.meta.env.VITE_API_BASE_URL
-	: '';
-
 export const OpenAPI: OpenAPIConfig = {
-	BASE: API_BASE,
+	BASE: '',
 	CREDENTIALS: 'include',
 	ENCODE_PATH: undefined,
 	HEADERS: undefined,
 	PASSWORD: undefined,
-	TOKEN: async () => {
-		if (typeof localStorage !== 'undefined') {
-			return localStorage.getItem('access_token') || '';
-		}
-		return '';
-	},
+	TOKEN: undefined,
 	USERNAME: undefined,
 	VERSION: '0.1.0',
-	WITH_CREDENTIALS: true,
+	WITH_CREDENTIALS: false,
 	interceptors: {
 		request: new Interceptors(),
 		response: new Interceptors(),
