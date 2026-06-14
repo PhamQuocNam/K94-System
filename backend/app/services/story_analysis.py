@@ -11,8 +11,6 @@ from app.core.exceptions import BusinessRuleException
 from app.core.logging import logger
 from app.core.storage import storage
 from app.crud.scene import get_scenes_by_storyboard
-from app.image_generator.image_gen import ImageGenerator
-from app.llm_provider import get_llm
 from app.models import (
     Character,
     Scene,
@@ -24,21 +22,11 @@ from app.prompts.story_analysis import (
     SCENE_EXTRACTION_PROMPT,
     SETTING_EXTRACTION_PROMPT,
 )
+from app.services.base import BaseService
 
 
-class StoryAnalysisService:
+class StoryAnalysisService(BaseService):
     """Service for analyzing stories and generating Phase 1 data."""
-
-    def __init__(self, session: Session, llm_provider: str | None = None):
-        """Initialize the story analysis service.
-
-        Args:
-            session: Database session
-            llm_provider: LLM provider to use (openai, claude, google)
-        """
-        self.session = session
-        self.llm = get_llm(provider=llm_provider)
-        self.image_generator: ImageGenerator | None = None
 
     async def analyze_story(
         self,

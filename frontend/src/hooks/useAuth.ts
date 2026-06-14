@@ -10,6 +10,7 @@ import {
 } from "@/client"
 import { handleError } from "@/utils"
 import useCustomToast from "./useCustomToast"
+import { queryKeys } from "@/lib/queryKeys"
 
 const isLoggedIn = () => {
   const token = localStorage.getItem("access_token")
@@ -22,7 +23,7 @@ const useAuth = () => {
   const { showErrorToast } = useCustomToast()
 
   const { data: user } = useQuery<UserPublic | null, Error>({
-    queryKey: ["currentUser"],
+    queryKey: queryKeys.users.me,
     queryFn: () => UsersService.readUserMe(),
     enabled: isLoggedIn(),
   })
@@ -35,7 +36,7 @@ const useAuth = () => {
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
     },
   })
 

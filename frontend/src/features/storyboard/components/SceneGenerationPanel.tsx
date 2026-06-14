@@ -84,7 +84,7 @@ export function SceneGenerationPanel({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Phase 2: Scene Generation</h3>
+          <h3 className="text-lg font-semibold">Scene Generation</h3>
           <p className="text-sm text-muted-foreground">
             Generate images and videos for storyboard scenes
           </p>

@@ -24,6 +24,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/shared/loading-button"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const projectSchema = z.object({
   title: z.string().min(1, "Title is required").max(255, "Title too long"),
@@ -32,6 +39,7 @@ const projectSchema = z.object({
     .max(1000, "Description too long")
     .optional()
     .or(z.literal("")),
+  status: z.enum(["Planning", "In progress", "Finished"]).optional(),
 })
 
 type ProjectForm = z.infer<typeof projectSchema>
@@ -42,6 +50,7 @@ interface EditProjectDialogProps {
   onOpenChange: (open: boolean) => void
   currentTitle: string | null | undefined
   currentDescription?: string | null | undefined
+  currentStatus?: string | null | undefined
 }
 
 export function EditProjectDialog({
@@ -50,6 +59,7 @@ export function EditProjectDialog({
   onOpenChange,
   currentTitle,
   currentDescription,
+  currentStatus,
 }: EditProjectDialogProps) {
   const queryClient = useQueryClient()
 
@@ -58,6 +68,7 @@ export function EditProjectDialog({
     defaultValues: {
       title: currentTitle || "",
       description: currentDescription || "",
+      status: (currentStatus as "Planning" | "In progress" | "Finished") || "Planning",
     },
   })
 
@@ -103,6 +114,31 @@ export function EditProjectDialog({
                   <FormControl>
                     <Input placeholder="Project title" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Planning">Planning</SelectItem>
+                      <SelectItem value="In progress">In progress</SelectItem>
+                      <SelectItem value="Finished">Finished</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

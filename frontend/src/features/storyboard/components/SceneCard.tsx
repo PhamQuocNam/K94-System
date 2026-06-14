@@ -106,7 +106,7 @@ export function SceneCard({
 
         {scene.title && (
           <Badge variant="secondary" className="text-xs">
-            📍 {scene.title}
+            {scene.title}
           </Badge>
         )}
 

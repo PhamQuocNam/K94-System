@@ -5,15 +5,13 @@ import { Suspense } from "react"
 
 import { ItemsService } from "@/client"
 import { DataTable } from "@/components/shared/DataTable"
-import {
-  AddItem,
-  columns,
-} from "@/features/items"
+import { AddItem, columns } from "@/features/items"
+import { queryKeys } from "@/lib/queryKeys"
 
 function getItemsQueryOptions() {
   return {
     queryFn: () => ItemsService.readItems({ skip: 0, limit: 100 }),
-    queryKey: ["items"],
+    queryKey: queryKeys.items.all,
   }
 }
 

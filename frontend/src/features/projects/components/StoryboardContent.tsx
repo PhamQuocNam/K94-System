@@ -76,7 +76,7 @@ export function StoryboardContent({
             size="lg"
             className="shadow-lg"
           >
-            Proceed to Phase 2
+            Continue
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>

@@ -17,6 +17,7 @@ from app.image_generator.image_gen import ImageGenerator
 from app.llm_provider import get_llm
 from app.models import Scene
 from app.schemas.scene import SceneCreate, SceneUpdate
+from app.schemas.auth import Message
 from app.schemas.storyboard import (
     BatchGenerationResponse,
     ImageGenerationResponse,
@@ -24,14 +25,82 @@ from app.schemas.storyboard import (
 )
 from app.services.scene_generation import SceneGenerationService
 from app.crud import get_characters_by_storyboard
+from app.utils.storage_helpers import collect_reference_paths
 
 router = APIRouter(prefix="/scenes", tags=["scenes"])
+
 
 def get_llm_dep(
     provider: Annotated[Literal["openai", "claude", "google"] | None, Query()] = None
 ) -> BaseChatModel:
     """Dependency to get LLM instance based on provider query parameter."""
     return get_llm(provider=provider)
+
+
+async def _generate_scene_image_helper(
+    session: Session,
+    scene: Scene,
+    llm: BaseChatModel,
+    style: str | None = None,
+) -> ImageGenerationResponse:
+    """Helper function to generate or regenerate scene image.
+
+    Args:
+        session: Database session
+        scene: Scene model instance
+        llm: LLM instance
+        style: Art style (uses storyboard style if not specified)
+
+    Returns:
+        Image generation response with URL
+    """
+    gen_service = SceneGenerationService(
+        session=session,
+        storyboard_id=scene.storyboard_id,
+        llm=llm,
+    )
+
+    characters = scene.characters
+    scene_setting = scene.setting
+    
+    # Collect reference paths using utility
+    reference_paths = await collect_reference_paths(
+        characters=characters,
+        setting=scene_setting,
+    )
+    
+    visual_prompt_data = await gen_service._generate_visual_prompt(
+        scene=scene,
+        characters=characters,
+        setting=scene_setting,
+    )
+
+    image_gen = ImageGenerator()
+    try:
+        temp_url = await image_gen.generate_scene_reference(
+            visual_prompt=visual_prompt_data["visual_prompt"],
+            style=style or gen_service.storyboard.style or "cinematic",
+            reference_paths=reference_paths
+        )
+
+        if temp_url:
+            image_url = await storage.download_and_save(temp_url, "images")
+            update_data = SceneUpdate(
+                reference_image_url=image_url,
+                visual_prompt=visual_prompt_data["visual_prompt"]
+            )
+            update_scene(
+                session=session,
+                db_scene=scene,
+                scene_in=update_data,
+            )
+            session.commit()
+            return ImageGenerationResponse(image_url=image_url)
+
+        return ImageGenerationResponse(error="Failed to generate image")
+
+    finally:
+        await image_gen.close()
 
 
 class SceneRequest(BaseModel):
@@ -116,10 +185,11 @@ async def create_scene_endpoint(
             sequence_number = (scenes[req.position -1].sequence_number + scenes[req.position].sequence_number) / 2
     else:
         sequence_number = scenes[-1].sequence_number + 1 if scenes else 1
-
+    
     new_scene_data["storyboard_id"] = str(storyboard_id)
     new_scene_data["sequence_number"] = sequence_number
-    new_scene_data["setting_id"] = scenes[int(sequence_number)].setting_id if scenes else None
+    # Inherit setting from last scene if available
+    new_scene_data["setting_id"] = scenes[-1].setting_id if scenes else None
     
     scene_create = SceneCreate(**new_scene_data)
     return create_scene(session, scene_create)
@@ -164,7 +234,7 @@ def delete_scene_endpoint(
     session: SessionDep,
     current_user: CurrentUser,
     scene_id: uuid.UUID,
-) -> dict:
+) -> Message:
     """Delete a scene.
 
     Args:
@@ -186,7 +256,7 @@ def delete_scene_endpoint(
     session.delete(scene)
     session.commit()
 
-    return {"message": "Scene deleted successfully"}
+    return Message(message="Scene deleted successfully")
 
 
 @router.post("/{scene_id}/regenerate-image", response_model=ImageGenerationResponse)
@@ -217,56 +287,7 @@ async def regenerate_scene_image(
 
     get_owned_storyboard(session, scene.storyboard_id, current_user.id)
 
-    gen_service = SceneGenerationService(
-        session=session,
-        storyboard_id=scene.storyboard_id,
-        llm=llm,
-    )
-
-    characters = scene.characters
-    scene_setting = scene.setting
-    
-    # Collect reference URLs and convert to local paths
-    reference_urls = [char.reference_image_url for char in characters if char.reference_image_url]
-    if scene_setting and scene_setting.reference_image_url:
-        reference_urls.append(scene_setting.reference_image_url)
-    
-    reference_paths = []
-    for url in reference_urls:
-        if url:
-            local_path = await storage.download_to_temp(url)
-            if local_path:
-                reference_paths.append(local_path)
-    
-    visual_prompt_data = await gen_service._generate_visual_prompt(
-        scene=scene,
-        characters=characters,
-        setting=scene_setting,
-    )
-
-    image_gen = ImageGenerator()
-    try:
-        temp_url = await image_gen.generate_scene_reference(
-            visual_prompt=visual_prompt_data["visual_prompt"],
-            style=style or gen_service.storyboard.style or "cinematic",
-            reference_paths=reference_paths
-        )
-
-        if temp_url:
-            image_url = await storage.download_and_save(temp_url, "images")
-            update_data = SceneUpdate(reference_image_url=image_url, visual_prompt= visual_prompt_data["visual_prompt"])
-            update_scene(
-                session=session,
-                db_scene=scene,
-                scene_in=update_data,
-            )
-            session.commit()
-            return ImageGenerationResponse(image_url=image_url)
-
-        return ImageGenerationResponse(error="Failed to generate image")
-
-    finally:
-        await image_gen.close()
+    return await _generate_scene_image_helper(session, scene, llm, style)
 
 
 @router.post("/{scene_id}/generate-image", response_model=ImageGenerationResponse)
@@ -297,56 +318,7 @@ async def generate_scene_image(
 
     get_owned_storyboard(session, scene.storyboard_id, current_user.id)
 
-    gen_service = SceneGenerationService(
-        session=session,
-        storyboard_id=scene.storyboard_id,
-        llm=llm,
-    )
-
-    characters = scene.characters
-    scene_setting = scene.setting
-    
-    # Collect reference URLs and convert to local paths
-    reference_urls = [char.reference_image_url for char in characters if char.reference_image_url]
-    if scene_setting and scene_setting.reference_image_url:
-        reference_urls.append(scene_setting.reference_image_url)
-    
-    reference_paths = []
-    for url in reference_urls:
-        if url:
-            local_path = await storage.download_to_temp(url)
-            if local_path:
-                reference_paths.append(local_path)
-    
-    visual_prompt_data = await gen_service._generate_visual_prompt(
-        scene=scene,
-        characters=characters,
-        setting=scene_setting,
-    )
-
-    image_gen = ImageGenerator()
-    try:
-        temp_url = await image_gen.generate_scene_reference(
-            visual_prompt=visual_prompt_data["visual_prompt"],
-            style=style or gen_service.storyboard.style or "cinematic",
-            reference_paths=reference_paths
-        )
-
-        if temp_url:
-            image_url = await storage.download_and_save(temp_url, "images")
-            update_data = SceneUpdate(reference_image_url=image_url, visual_prompt= visual_prompt_data["visual_prompt"])
-            update_scene(
-                session=session,
-                db_scene=scene,
-                scene_in=update_data,
-            )
-            session.commit()
-            return ImageGenerationResponse(image_url=image_url)
-
-        return ImageGenerationResponse(error="Failed to generate image")
-
-    finally:
-        await image_gen.close()
+    return await _generate_scene_image_helper(session, scene, llm, style)
 
 
 @router.post("/{scene_id}/generate-video", response_model=VideoGenerationResponse)

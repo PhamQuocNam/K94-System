@@ -36,6 +36,7 @@ import {
 const projectSchema = z.object({
   title: z.string().min(1, "Title is required").max(255, "Title too long"),
   type: z.enum(["storyboard"]),
+  status: z.enum(["Planning", "In progress", "Finished"]).optional(),
   description: z.string().max(1000, "Description too long").optional(),
 })
 
@@ -56,6 +57,7 @@ function NewProjectPage() {
     defaultValues: {
       title: "",
       type: "storyboard",
+      status: "Planning",
       description: "",
     },
   })
@@ -136,6 +138,32 @@ function NewProjectPage() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="storyboard">Storyboard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Planning">Planning</SelectItem>
+                        <SelectItem value="In progress">In progress</SelectItem>
+                        <SelectItem value="Finished">Finished</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

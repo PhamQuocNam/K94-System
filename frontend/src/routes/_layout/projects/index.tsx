@@ -10,6 +10,7 @@ import {
   ProjectActions,
 } from "@/features/projects"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -90,9 +91,25 @@ function ProjectsPage() {
           {projects.map((project) => (
             <Card key={project.id} className="group overflow-hidden">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <CardTitle className="line-clamp-1">
-                  {project.title || "Untitled Project"}
-                </CardTitle>
+                <div className="flex-1">
+                  <CardTitle className="line-clamp-1">
+                    {project.title || "Untitled Project"}
+                  </CardTitle>
+                  {project.status && (
+                    <Badge
+                      variant={
+                        project.status === "Finished"
+                          ? "default"
+                          : project.status === "In progress"
+                            ? "secondary"
+                            : "outline"
+                      }
+                      className="mt-2"
+                    >
+                      {project.status}
+                    </Badge>
+                  )}
+                </div>
                 <ProjectActions
                   projectId={project.id}
                   onEdit={() => {
@@ -109,6 +126,14 @@ function ProjectsPage() {
                 <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                   {project.description || "No description"}
                 </p>
+                <div className="text-xs text-muted-foreground mb-4 space-y-1">
+                  {project.created_at && (
+                    <p>Created: {new Date(project.created_at).toLocaleDateString()}</p>
+                  )}
+                  {project.updated_at && (
+                    <p>Updated: {new Date(project.updated_at).toLocaleDateString()}</p>
+                  )}
+                </div>
                 <Button asChild variant="ghost" size="sm" className="w-full">
                   <Link to="/projects/$id" params={{ id: project.id }}>
                     View Project →
@@ -128,6 +153,7 @@ function ProjectsPage() {
             onOpenChange={setEditDialogOpen}
             currentTitle={selectedProject.title}
             currentDescription={selectedProject.description}
+            currentStatus={selectedProject.status}
           />
           <DeleteProjectDialog
             projectId={selectedProject.id}

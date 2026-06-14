@@ -11,13 +11,13 @@ from sqlmodel import Session, select
 
 from app.core.logging import logger
 from app.core.storage import storage
-from app.image_generator.image_gen import ImageGenerator
 from app.models import Character, Scene, Setting, StoryBoard
 from app.prompts.scene_visual import (
     CHARACTER_STATE_UPDATE_PROMPT,
     SCENE_VISUAL_PROMPT,
 )
-from app.video_generator import VideoGenerator
+from app.services.base import BaseService
+from app.utils.storage_helpers import collect_reference_paths
 
 
 @dataclass
@@ -206,7 +206,7 @@ class CharacterStateTracker:
             }
 
 
-class SceneGenerationService:
+class SceneGenerationService(BaseService):
     """Service for generating scene images and videos (Phase 2)."""
 
     def __init__(
@@ -222,9 +222,8 @@ class SceneGenerationService:
             storyboard_id: Storyboard UUID
             llm: LangChain chat model instance
         """
-        self.session = session
+        super().__init__(session=session, llm=llm)
         self.storyboard_id = storyboard_id
-        self.llm = llm
 
         # Load storyboard data
         self.storyboard = self.session.exec(
@@ -237,8 +236,6 @@ class SceneGenerationService:
         # Initialize managers
         self.history_manager = SceneHistoryManager(max_history=5)
         self.state_tracker = CharacterStateTracker(self.llm)
-        self.image_generator: ImageGenerator | None = None
-        self.video_generator: VideoGenerator | None = None
 
     async def generate_scene_images(
         self,
@@ -303,25 +300,11 @@ class SceneGenerationService:
                     # Update character states based on scene narrative
                     character_names = [char.name for char in scene_characters if char.name]
 
-                    # Collect reference URLs
-                    reference_urls = [
-                        char.reference_image_url
-                        for char in scene_characters
-                        if char.reference_image_url
-                    ]
-                    if scene_setting and scene_setting.reference_image_url:
-                        reference_urls.append(scene_setting.reference_image_url)
-
-                    # Download references to local files for image generation
-                    reference_paths = []
-                    for url in reference_urls:
-                        if url:
-                            try:
-                                local_path = await storage.download_to_temp(url)
-                                if local_path:
-                                    reference_paths.append(local_path)
-                            except Exception as e:
-                                logger.warning("Failed to download reference", url=url, error=str(e))
+                    # Collect reference paths using utility
+                    reference_paths = await collect_reference_paths(
+                        characters=scene_characters,
+                        setting=scene_setting,
+                    )
 
                     # Convert CharacterState objects to dicts for the LLM prompt
                     previous_states_dict: dict[str, dict] = {

@@ -2,21 +2,17 @@ import {
   Check,
   Copy,
   Image as ImageIcon,
-  Loader2,
   Pencil,
   Plus,
   Trash2,
   Upload,
   Video,
-  X,
 } from "lucide-react"
 import React, { useState } from "react"
 import type { Scene } from "@/client/types.gen"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { useImageUpload } from "../hooks/useImageUpload"
-import { useVideoUpload } from "../hooks/useVideoUpload"
 import { CreateSceneDialog } from "./CreateSceneDialog"
 import { EditSceneDialog } from "./EditSceneDialog"
 
@@ -40,22 +36,8 @@ function SceneCard({ scene, index, onEdit, onDelete }: SceneCardProps) {
     hasImage ? "image" : "video",
   )
   const [copied, setCopied] = useState(false)
-  const [showUploadMenu, setShowUploadMenu] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-
-  const imageUpload = useImageUpload({
-    onUploadSuccess: async (url) => {
-      await updateSceneImage(scene.id || "", url)
-      setShowUploadMenu(false)
-    },
-  })
-
-  const videoUpload = useVideoUpload({
-    onUploadSuccess: async (url) => {
-      await updateSceneVideo(scene.id || "", url)
-      setShowUploadMenu(false)
-    },
-  })
+  const [_isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const handleCopy = async () => {
     if (scene.visual_prompt) {
@@ -107,28 +89,99 @@ function SceneCard({ scene, index, onEdit, onDelete }: SceneCardProps) {
     }
   }
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+
+    const file = files[0]
+    const isImage = file.type.startsWith("image/")
+    const isVideo = file.type.startsWith("video/")
+
+    if (!isImage && !isVideo) {
+      alert("Please drop an image or video file")
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const token = localStorage.getItem("access_token")
+      const uploadEndpoint = isVideo ? "/api/v1/utils/upload-video/" : "/api/v1/utils/upload-image/"
+      const uploadResponse = await fetch(uploadEndpoint, {
+        method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) throw new Error("Upload failed")
+
+      const uploadData = await uploadResponse.json()
+      const url = uploadData.url
+
+      if (isImage) {
+        await updateSceneImage(scene.id || "", url)
+      } else {
+        await updateSceneVideo(scene.id || "", url)
+      }
+    } catch {
+      alert("Failed to upload file")
+      setIsUploading(false)
+    }
+  }
+
   const showImage = displayMediaType === "image" && hasImage
   const showVideo = displayMediaType === "video" && hasVideo
 
   return (
-    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-200 border-muted/50">
-      <div className="aspect-video relative bg-gradient-to-br from-muted/30 to-muted/60">
+    <Card 
+      className={`group overflow-hidden hover:shadow-lg transition-all duration-200 border-muted/50 h-full flex flex-col ${isDragging ? "border-primary border-2 bg-primary/5" : ""}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="aspect-[4/3] relative bg-gradient-to-br from-muted/30 to-muted/60 flex-shrink-0 w-full overflow-hidden">
         {showImage ? (
           <img
             src={scene.reference_image_url || undefined}
             alt={scene.title || `Scene ${scene.sequence_number}`}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 absolute inset-0"
           />
         ) : showVideo ? (
           <video
             src={scene.reference_video_url || undefined}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover absolute inset-0"
             muted
             controls
           />
         ) : (
           <div className="flex h-full items-center justify-center">
             <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+          </div>
+        )}
+
+        {isDragging && (
+          <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="text-center">
+              <Upload className="h-12 w-12 mx-auto mb-2 text-primary animate-bounce" />
+              <p className="text-sm font-medium">Drop to upload</p>
+            </div>
           </div>
         )}
 
@@ -146,9 +199,9 @@ function SceneCard({ scene, index, onEdit, onDelete }: SceneCardProps) {
         )}
       </div>
 
-      <CardContent className="p-3 space-y-3">
+      <CardContent className="p-3 space-y-3 flex-1 flex flex-col min-h-0">
         {scene.visual_prompt && (
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 flex-shrink-0">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Prompt
@@ -173,7 +226,7 @@ function SceneCard({ scene, index, onEdit, onDelete }: SceneCardProps) {
           </div>
         )}
 
-        <div className="flex gap-1.5 pt-1">
+        <div className="flex flex-wrap gap-1.5 pt-1 flex-shrink-0 mt-auto">
           {hasImage && (
             <Button
               size="sm"
@@ -200,21 +253,6 @@ function SceneCard({ scene, index, onEdit, onDelete }: SceneCardProps) {
           )}
           <Button
             size="sm"
-            variant="outline"
-            className="h-7 gap-1.5 transition-all"
-            onClick={() => setShowUploadMenu(!showUploadMenu)}
-            title="Upload Media"
-            disabled={isUploading}
-          >
-            {isUploading ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Upload className="h-3 w-3" />
-            )}
-            <span className="text-xs">Upload</span>
-          </Button>
-          <Button
-            size="sm"
             variant="ghost"
             className="h-7 w-7 p-0 hover:bg-muted transition-colors"
             onClick={() => onEdit?.(scene)}
@@ -232,107 +270,6 @@ function SceneCard({ scene, index, onEdit, onDelete }: SceneCardProps) {
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
-
-        {showUploadMenu && (
-          <div className="space-y-2 pt-2 border-t border-muted/50">
-            <div className="flex gap-2">
-              <input
-                ref={imageUpload.fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={imageUpload.handleFileChange}
-                className="hidden"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 h-8 gap-1.5"
-                onClick={imageUpload.triggerFileInput}
-                disabled={!!imageUpload.file}
-              >
-                <ImageIcon className="h-3.5 w-3.5" />
-                <span className="text-xs">Choose Image</span>
-              </Button>
-              {imageUpload.file && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 px-3"
-                    onClick={imageUpload.handleUploadToServer}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0"
-                    onClick={imageUpload.reset}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <input
-                ref={videoUpload.fileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={videoUpload.handleFileChange}
-                className="hidden"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 h-8 gap-1.5"
-                onClick={videoUpload.triggerFileInput}
-                disabled={!!videoUpload.file}
-              >
-                <Video className="h-3.5 w-3.5" />
-                <span className="text-xs">Choose Video</span>
-              </Button>
-              {videoUpload.file && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="h-8 px-3"
-                    onClick={videoUpload.handleUploadToServer}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0"
-                    onClick={videoUpload.reset}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </>
-              )}
-            </div>
-            {imageUpload.preview && (
-              <div className="aspect-video overflow-hidden rounded-md bg-muted">
-                <img
-                  src={imageUpload.preview}
-                  alt="Preview"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            )}
-            {videoUpload.preview && (
-              <div className="aspect-video overflow-hidden rounded-md bg-muted">
-                <video
-                  src={videoUpload.preview}
-                  controls
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   )
@@ -390,7 +327,7 @@ export function SceneGrid({
                   {index < scenes.length - 1 && (
                     <button
                       onClick={() =>
-                        setInsertAfter(scene.sequence_number ?? index + 1)
+                        setInsertAfter(index + 1)
                       }
                       className="absolute -right-6 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full border border-dashed border-muted-foreground/30 bg-background hover:border-primary hover:bg-primary/10 transition-colors group"
                       title="Add scene here"

@@ -11,11 +11,12 @@ import {
 } from "@/features/admin"
 import { DataTable } from "@/components/shared/DataTable"
 import useAuth from "@/hooks/useAuth"
+import { queryKeys } from "@/lib/queryKeys"
 
 function getUsersQueryOptions() {
   return {
     queryFn: () => UsersService.readUsers({ skip: 0, limit: 100 }),
-    queryKey: ["users"],
+    queryKey: queryKeys.users.all,
   }
 }
 

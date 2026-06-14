@@ -159,7 +159,7 @@ export function VisualGenerationPage() {
             <Wand2 className="h-5 w-5 text-amber-600" />
             <div className="flex-1">
               <p className="font-medium text-amber-900 dark:text-amber-100">
-                Complete Phase 1 First
+                Complete story analysis
               </p>
               <p className="text-sm text-amber-700 dark:text-amber-300">
                 You need to analyze your story and create scenes before
@@ -167,7 +167,7 @@ export function VisualGenerationPage() {
               </p>
             </div>
             <Button onClick={handleBackToPhase1} size="sm">
-              Go to Phase 1
+              Go back
             </Button>
           </div>
         </div>

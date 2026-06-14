@@ -76,7 +76,7 @@ export function CreateSceneDialog({
         <DialogHeader>
           <DialogTitle>
             {insertAfterSequence !== undefined
-              ? `Insert Scene After Scene ${insertAfterSequence}`
+              ? `Insert Scene`
               : "Create New Scene"}
           </DialogTitle>
           <DialogDescription>
